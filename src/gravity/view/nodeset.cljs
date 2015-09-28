@@ -4,8 +4,8 @@
 
 
 (defn create
-	"Create a new nodeset"
-	[]
+	"Create a new Points (formerly ParticleSystem) gives a set of nodes and a color classifier"
+	[nodes classifier]
 	(let [geometry (new js/THREE.Geometry)
 		  material-params { :size 10
 		  					:map (.loadTexture js/THREE.ImageUtils "assets/img/circle.png")
@@ -13,8 +13,21 @@
 		  					:transparent false
 		  					:vertexColors true}
 		  material (new js/THREE.PointsMaterial (clj->js material-params))
-		  particle-system (new js/THREE.Points geometry material)]
-			particle-system))
+		  particle-system (new js/THREE.Points geometry material)
+		  colors (.-colors geometry)]
+
+		  (set! (.-colors geometry) #js [])
+		  (loop [i 0]
+		  	(let [node (aget nodes i)]
+		  		(.push colors (get-color classifier node ))
+		  		(.push (.-vertices geometry) (.-position node)))
+		  	(when (< i (dec (.-length nodes)))
+		  		(recur (inc i))))
+		  (set! (.-verticesNeedUpdate geometry) true)
+		  (set! (.-colors geometry) colors)
+		  (set! (.-colorsNeedUpdate  geometry) true)
+
+		particle-system))
 
 
 
@@ -47,37 +60,13 @@
 		(recur (inc i))))
   nodes)
 
-(defn add-to
-	"Add a node to a nodeset, return new nodset"
-	[nodeset node]
-	(.push (.-vertices (.-geometry nodeset)) node)
-	nodeset)
-
-
-(defn add-all!
-	"Add all nodes to the nodeset, add a position vector3 inside the nodes, return new nodeset"
-	[nodeset nodes]
-	(let   [geometry (.-geometry nodeset)
-			colors (.-colors geometry)
-			classifier (.category10 js/d3.scale)]
-			(set! (.-colors geometry) #js [])
-			(loop [i 0]
-				(let [node (aget nodes i)]
-					(.push colors (get-color classifier node ))
-					(.push (.-vertices geometry) (.-position node)))
-				(when (< i (dec (.-length nodes)))
-					(recur (inc i))))
-			(set! (.-verticesNeedUpdate geometry) true)
-			(set! (.-colors geometry) colors)
-			(set! (.-colorsNeedUpdate  geometry) true))
-	nodeset)
-
 
 (defn update
 	"Update a nodeset Points geometry or a LineSegments geometry"
 	[geom-based-item]
 	(set! (.-verticesNeedUpdate (.-geometry geom-based-item)) true)
 	geom-based-item)
+
 
 (defn update-positions!
 	"Update the nodes' positions according to the raw array given by the force"

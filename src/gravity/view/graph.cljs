@@ -31,11 +31,12 @@
         stats (make-stats)
         controls (new js/THREE.OrbitControls camera)
         renderer (new js/THREE.WebGLRenderer #js {"antialias" true})
+        classifier (.category10 js/d3.scale)
         data-test (demo/get-demo-graph)
           ;nodes (clj->js (mapv node/create (range 0 1000)))
           nodes (points/prepare-nodes! (.-nodes data-test))
           links (.-links data-test)
-        nodeset (points/create)
+        nodeset (points/create nodes classifier)
         links-set (points/create-links nodes links)
         force-worker (worker/create "force-worker/worker.js")
         state (atom {:should-run true})
@@ -69,8 +70,6 @@
 	    
 	;(worker/send force-worker "precompute" 50)
     
-    
-    (points/add-all! nodeset nodes)
 
     (.add scene nodeset)
     (.add scene links-set)
@@ -90,6 +89,4 @@
               :canvas (.-domElement renderer)
               :scene scene
               :stats (.-domElement stats)}
-            )
-    )
-)
+            )))

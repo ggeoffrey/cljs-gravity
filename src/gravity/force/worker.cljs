@@ -1,5 +1,5 @@
 (when-not (undefined? js/self.importScripts) 
-	(.importScripts js/self "../libs/d3.min.js"))
+	(.importScripts js/self "../libs/d3.min.js" "../libs/d3.layout.force3d.js"))
 
 ;;---------------------------------
 
@@ -63,10 +63,10 @@
   []  
   (def f-xy (.force js/d3.layout))
   (.on f-xy "tick" tick)
-  (def f-xyz (.force js/d3.layout))
+  (def f-xyz (.force3d js/d3.layout))
   (.on f-xyz "tick" tick)
 
-  (def force f-xy)
+  (def force f-xyz)
 
   (.addEventListener js/self "message" dispatcher))
 
