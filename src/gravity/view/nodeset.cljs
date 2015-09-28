@@ -8,7 +8,6 @@
 	[]
 	(let [geometry (new js/THREE.Geometry)
 		  material-params { :size 10
-		  					
 		  					:map (.loadTexture js/THREE.ImageUtils "assets/img/circle.png")
 		  					:blending js/THREE.AdditiveBlending
 		  					:transparent true
@@ -30,11 +29,13 @@
 			colors (.-colors geometry)
 			classifier (.category10 js/d3.scale)]
 			(set! (.-colors geometry) #js [])
-			(doall (map (fn [node]
-							(.push colors (get-color classifier node ))
-							(set! (.-position node) (new js/THREE.Vector3 ))
-							(.push (.-vertices geometry) (.-position node))
-						) nodes))
+			(loop [i 0]
+				(let [node (aget nodes i)]
+					(.push colors (get-color classifier node ))
+					(set! (.-position node) (new js/THREE.Vector3 ))
+					(.push (.-vertices geometry) (.-position node)))
+				(when (< i (dec (.-length nodes)))
+					(recur (inc i))))
 			(set! (.-verticesNeedUpdate geometry) true)
 			(set! (.-colors geometry) colors)
 			(set! (.-colorsNeedUpdate  geometry) true))
@@ -48,12 +49,12 @@
 	nodeset)
 
 (defn update-positions!
-	"Update the nodes' positions according to the raw arry qiven by the force"
+	"Update the nodes' positions according to the raw array given by the force"
 	[nodes positions]
  	(let [size (dec (.-length nodes))]
     	(loop [i 0]
        		(let [j (* i 3)
-               	  node (nth nodes i)
+               	  node (aget nodes i)
                   x (aget positions j)
                   y (aget positions (+ j 1))
                   z (aget positions (+ j 2))]

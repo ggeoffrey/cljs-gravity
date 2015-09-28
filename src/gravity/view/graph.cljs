@@ -32,8 +32,8 @@
         controls (new js/THREE.OrbitControls camera)
         renderer (new js/THREE.WebGLRenderer)
         data-test (demo/get-demo-graph)
-          nodes (clj->js (mapv node/create (range 0 1000)))
-          ;nodes (.-nodes data-test)
+          ;nodes (clj->js (mapv node/create (range 0 1000)))
+          nodes (.-nodes data-test)
           links (.-links data-test)
         nodeset (points/create)
         force-worker (worker/create "force-worker/worker.js")
@@ -58,34 +58,29 @@
                                                        (points/update nodeset))))))
     
     
+    ;(worker/send force-worker "select-mode" "2D")
 
-    (worker/send force-worker "set-nodes" nodes)
+    
+	(worker/send force-worker "set-nodes" nodes)
     (worker/send force-worker "set-links" links)
     (worker/send force-worker "start")
-    
-    (worker/send force-worker "precompute" 100)
-    
-
+	    
+	(worker/send force-worker "precompute" 50)
     
     
 
+    
+    
     (points/add-all! nodeset nodes)
     (.add scene nodeset)
 
-    ;;(log (.-geometry nodeset))
-    ;;(log (.nodes gravity))
 
-
-    ;;(.start gravity)
 
     ((fn forever-render []
       (.requestAnimationFrame js/window forever-render 50)
       (render)))
     
-    
 
-    ;(force/set-tick gravity (fn [_]
-    ;                            (points/update nodeset)))
 
     (clj->js {:start (fn [] 
                 (swap! state assoc :should-run true)

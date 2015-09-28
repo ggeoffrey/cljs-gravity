@@ -23,6 +23,7 @@
 				:closure-warnings {:externs-validation :off}
     
 				;:optimizations :whitespace
+				:pretty-print true
      			:externs ["libs/three.min.js"
    						  "libs/d3.min.js"
    			 			  "libs/OrbitControls.js"

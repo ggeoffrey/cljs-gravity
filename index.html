@@ -19,14 +19,16 @@
         <script src="out/gravity.js"></script>
         <script>
         	// call main
-            (function start (argument) {
+            function start (argument) {
                 var gg = gravity.core.main();
                 if(gg){
                     document.body.appendChild(gg.canvas);
                     document.body.appendChild(gg.stats);                    
                     window.gg = gg;
                 }
-            })();
+            }
+            
+            start();
 
             
 

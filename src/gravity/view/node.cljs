@@ -24,7 +24,8 @@
 	[]
  	(let [ext 2000
  		  node #js {}]
- 		(set! (.-position node) (new js/THREE.Vector3 (get-rand-pos ext) (get-rand-pos ext) 0))))
+ 		(set! (.-position node) (new js/THREE.Vector3 (get-rand-pos ext) (get-rand-pos ext) 0))
+ 		node))
 
 
 

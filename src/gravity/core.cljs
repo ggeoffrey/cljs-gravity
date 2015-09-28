@@ -1,9 +1,8 @@
 (ns gravity.core
-  (:require [clojure.browser.repl :as repl]
-  			[gravity.view.graph :as graph]
+  (:require [gravity.view.graph :as graph]
      		[gravity.tools]))
 
-
+;[clojure.browser.repl :as repl]
 ;  (defonce conn
 ;     (repl/connect "http://localhost:9000/repl"))
 
