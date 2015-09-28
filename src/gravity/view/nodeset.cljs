@@ -10,17 +10,49 @@
 		  material-params { :size 10
 		  					:map (.loadTexture js/THREE.ImageUtils "assets/img/circle.png")
 		  					:blending js/THREE.AdditiveBlending
-		  					:transparent true
+		  					:transparent false
 		  					:vertexColors true}
 		  material (new js/THREE.PointsMaterial (clj->js material-params))
 		  particle-system (new js/THREE.Points geometry material)]
 			particle-system))
+
+
+
+(defn create-links 
+  "Given a js-array of nodes and a js array of links, will return a THREE.LineSegments"
+  [nodes links]
+  (let [geometry (new js/THREE.Geometry)
+  		vertices (.-vertices geometry)
+  		material (new js/THREE.LineBasicMaterial #js {"color" 0xffffff})
+  		system (new js/THREE.LineSegments geometry material)
+  		size (dec (.-length links))]
+  		(loop [i 0]
+  			(let [link (aget links i)
+  				  source (aget nodes (.-source link))
+  				  target (aget nodes (.-target link))]
+  				  (.push vertices (.-position source))
+  				  (.push vertices (.-position target)))
+  			(when (< i size)
+  				(recur (inc i))))
+  		(set! (.-verticesNeedUpdate geometry) true)
+  		system))
+
+(defn prepare-nodes!
+  "Add a Vector3 object in each nodes to hold their position."
+  [nodes]
+  (loop [i 0]
+	(let [node (aget nodes i)]
+		(set! (.-position node) (new js/THREE.Vector3 )))
+	(when (< i (dec (.-length nodes)))
+		(recur (inc i))))
+  nodes)
 
 (defn add-to
 	"Add a node to a nodeset, return new nodset"
 	[nodeset node]
 	(.push (.-vertices (.-geometry nodeset)) node)
 	nodeset)
+
 
 (defn add-all!
 	"Add all nodes to the nodeset, add a position vector3 inside the nodes, return new nodeset"
@@ -32,7 +64,6 @@
 			(loop [i 0]
 				(let [node (aget nodes i)]
 					(.push colors (get-color classifier node ))
-					(set! (.-position node) (new js/THREE.Vector3 ))
 					(.push (.-vertices geometry) (.-position node)))
 				(when (< i (dec (.-length nodes)))
 					(recur (inc i))))
@@ -43,10 +74,10 @@
 
 
 (defn update
-	"Update a nodeset pointcloud geometry"
-	[nodeset]
-	(set! (.-verticesNeedUpdate (.-geometry nodeset)) true)
-	nodeset)
+	"Update a nodeset Points geometry or a LineSegments geometry"
+	[geom-based-item]
+	(set! (.-verticesNeedUpdate (.-geometry geom-based-item)) true)
+	geom-based-item)
 
 (defn update-positions!
 	"Update the nodes' positions according to the raw array given by the force"
@@ -61,8 +92,6 @@
             	(.set (.-position node) x y z)
              (when (< i size)
                (recur (inc i)))))))
-
-
 
 
 ; Colors & shape

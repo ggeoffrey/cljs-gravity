@@ -30,12 +30,13 @@
         camera (new js/THREE.PerspectiveCamera 75 (/ width height) 0.1 100000 )
         stats (make-stats)
         controls (new js/THREE.OrbitControls camera)
-        renderer (new js/THREE.WebGLRenderer)
+        renderer (new js/THREE.WebGLRenderer #js {"antialias" true})
         data-test (demo/get-demo-graph)
           ;nodes (clj->js (mapv node/create (range 0 1000)))
-          nodes (.-nodes data-test)
+          nodes (points/prepare-nodes! (.-nodes data-test))
           links (.-links data-test)
         nodeset (points/create)
+        links-set (points/create-links nodes links)
         force-worker (worker/create "force-worker/worker.js")
         state (atom {:should-run true})
         render (fn cb []
@@ -55,7 +56,8 @@
                                    data (.-data message)]
                                (case type
                                  "nodes-positions" (do (points/update-positions! nodes data)
-                                                       (points/update nodeset))))))
+                                                       (points/update nodeset)
+                                                       (points/update links-set))))))
     
     
     ;(worker/send force-worker "select-mode" "2D")
@@ -65,14 +67,13 @@
     (worker/send force-worker "set-links" links)
     (worker/send force-worker "start")
 	    
-	(worker/send force-worker "precompute" 50)
-    
-    
-
+	;(worker/send force-worker "precompute" 50)
     
     
     (points/add-all! nodeset nodes)
+
     (.add scene nodeset)
+    (.add scene links-set)
 
 
 
