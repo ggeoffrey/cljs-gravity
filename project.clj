@@ -28,4 +28,5 @@
    						  "libs/d3.min.js"
    			 			  "libs/OrbitControls.js"
         				  "libs/stats.min.js"]
-        		:source-map "out/gravity.js.map"}}]})
+        		:source-map "out/gravity.js.map"
+          		:repl-listen-port 9000}}]})

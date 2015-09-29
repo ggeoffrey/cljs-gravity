@@ -52,6 +52,7 @@
       ;"select-mode" (select-mode data)
       "start" (start)
       "stop"  (stop)
+      "resume" (resume)
       "set-nodes" (set-nodes data)
       "set-links" (set-links data)
       "precompute" (precompute data)
@@ -66,7 +67,7 @@
   (def f-xyz (.force3d js/d3.layout))
   (.on f-xyz "tick" tick)
 
-  (def force f-xyz)
+  (def force f-xy)
 
   (.addEventListener js/self "message" dispatcher))
 
@@ -93,10 +94,20 @@
   []
   (.stop force))
 
+(defn resume 
+  "Resume the force"
+  []
+  (.resume force))
+
 (defn set-nodes 
   "Set the nodes list"
-  [nodes]
-  (.nodes force nodes))
+  [nb-nodes]
+  (let [nodes (array)]
+    (loop [i 0]
+      (.push nodes (js-obj))
+      (when (< i nb-nodes)
+        (recur (inc i))))
+    (.nodes force nodes)))
 
 (defn set-links
   "Set the links list"

@@ -7,24 +7,45 @@
   (- (rand (* extent 2)) extent))
 
 
+(defn generate-geometry
+  "Generate a generic geometry"
+  []
+  (new js/THREE.SphereGeometry 5 5 5))
 
-;;(defn create
-;;  "create and return a new node sphere"
-;;  []
-;;  (let [geometry (new js/THREE.BoxGeometry 5 5 5)
-;;        material (new js/THREE.MeshBasicMaterial (clj->js {:color 0xff0000}))
-;;        sphere (new js/THREE.Mesh geometry material)
-;;        extent 1000]
-;;    (.set (.-position sphere) (get-rand-pos extent) (get-rand-pos extent) (get-rand-pos extent))
-;;    sphere)
-;;  )
+
+(def get-unique-geometry
+  (memoize generate-geometry))
+
+(defn generate-material
+  "Generate a generic material"
+  []
+  (new js/THREE.MeshBasicMaterial (clj->js {:color 0xff0000
+                                            :visible false})))
+
+
+(def get-unique-material
+  (memoize generate-material))
+
+
+(defn generate-collider
+  "create and return a new node mesh used for collisions"
+  []
+  (let [geometry (get-unique-geometry)
+        material (get-unique-material)
+        sphere (new js/THREE.Mesh geometry material)]
+    sphere))
+
+
 
 (defn create
-	"Return a node particle position"
-	[]
+	"Return a cloned node with a random position and a collider object"
+	[node]
  	(let [ext 2000
- 		  node #js {}]
- 		(set! (.-position node) (new js/THREE.Vector3 (get-rand-pos ext) (get-rand-pos ext) 0))
+ 		  node (.clone js/goog.object node)
+     	  collider (generate-collider)
+          position (new js/THREE.Vector3 (get-rand-pos ext) (get-rand-pos ext) 0)]
+ 		(set! (.-position node) position)
+   		(set! (.-collider node) collider)
  		node))
 
 

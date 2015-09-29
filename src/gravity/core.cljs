@@ -1,10 +1,8 @@
 (ns gravity.core
-  (:require [gravity.view.graph :as graph]
-     		[gravity.tools]))
+	(:require [gravity.view.graph :as graph]))
 
 ;[clojure.browser.repl :as repl]
-;  (defonce conn
-;     (repl/connect "http://localhost:9000/repl"))
+;(repl/connect "http://localhost:9000/repl")
 
 
 (enable-console-print!)
@@ -12,4 +10,4 @@
 (defn ^:export main
 	"Entry point"
 	[]
- 	(graph/create))
+	(graph/create))

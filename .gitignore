@@ -5,8 +5,11 @@ pom.xml
 /out/
 /release/
 /target/
+/repl/
+/.repl*/
 /temp/
 /scripts/
 .lein-deps-sum
 .lein-repl-history
 .lein-plugins/
+
