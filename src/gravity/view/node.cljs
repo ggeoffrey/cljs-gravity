@@ -20,7 +20,8 @@
   "Generate a generic material"
   []
   (new js/THREE.MeshBasicMaterial (clj->js {:color 0xff0000
-                                            :visible false})))
+                                            :visible false
+                                            :wireframe true})))
 
 
 (def get-unique-material
@@ -46,6 +47,7 @@
           position (new js/THREE.Vector3 (get-rand-pos ext) (get-rand-pos ext) 0)]
  		(set! (.-position node) position)
    		(set! (.-collider node) collider)
+     	(set! (.-node collider) node)
  		node))
 
 

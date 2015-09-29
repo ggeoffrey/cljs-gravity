@@ -30,6 +30,7 @@
 		controls (new js/THREE.OrbitControls camera)
 		renderer (new js/THREE.WebGLRenderer #js {"antialias" true})
   		canvas (.-domElement renderer)
+    	raycaster (new THREE.Raycaster)
 		classifier (.category10 js/d3.scale)
 		data-test (demo/get-demo-graph)
 		  ;gen-nodes (clj->js (mapv #(js-obj) (range 0 2000)))
@@ -70,15 +71,15 @@
 
 	(.add scene nodeset)
  	
-	;(loop [i 0]
-	;	(.add scene (aget colliders i))
-	;	(when (< i (dec (.-length colliders)))
-	;		(recur (inc i))))
+	(loop [i 0]
+		(.add scene (aget colliders i))
+		(when (< i (dec (.-length colliders)))
+			(recur (inc i))))
 
 	;(.add scene colliders)
 	(.add scene links-set)
  
- 	;(.addEventListener canvas "mousemove" (onDocMouseMove renderer camera nodeset))
+ 	(.addEventListener canvas "mousemove" (onDocMouseMove canvas camera raycaster colliders))
 
  	(render)
   
@@ -130,10 +131,39 @@
 		(worker/send force-worker "resume")))
 
 
-(defn onDocMouseMove
-  "Callback for the mouseMove event on the document node"
-  [renderer camera nodeset]
-  (fn [e]
-    (let [canvas (.-domElement renderer)
-          x (dec (* 2 (/ (.-clientX e) (.-width canvas))))]
-      (t/log x))))
+
+(defn onDocMouseMove  ; TODO : split in 2 and emit an event to an async channel
+  "Callback for the mouseMove event on the canvas node"
+  [canvas camera raycaster colliders]
+  (let [mouse-pos (new js/THREE.Vector3)]
+    (fn [event]
+	    (.preventDefault event)	
+	    (let [bounding-rect (.getBoundingClientRect canvas)
+	          x (-> (.-clientX event)
+	                (- (.-left bounding-rect))
+	                (/ (.-offsetWidth canvas))
+	                (* 2)
+	                (- 1))
+	          y (-> (.-clientY event)
+	                (- (.-top bounding-rect))
+	                (/ (.-offsetHeight canvas))
+                 	(-)
+	                (* 2)
+	                (+ 1))
+              cam-position (.-position camera)]
+	      ;(t/log x y)
+       	  (.set mouse-pos x y 1)
+       	  (.unproject mouse-pos camera)
+          ;(t/log mouse-pos)
+          ;(t/log (.normalize (.sub mouse-pos cam-position)))
+          (.set raycaster cam-position (.normalize (.sub mouse-pos cam-position)))
+          (let [item (aget (.intersectObjects raycaster colliders) 0)]
+            (when-not (nil? item)
+              (t/log (-> item (.-object) (.-node))))))
+     false)))
+
+(defn get-targets
+  "Cast a ray to intersect objects under the mouse pointer.
+  Return the first intersected or nil"
+  []
+  )
