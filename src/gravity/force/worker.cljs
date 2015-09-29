@@ -1,4 +1,5 @@
-(.importScripts js/self "../libs/d3.min.js")
+(when-not (undefined? js/self.importScripts) 
+	(.importScripts js/self "../libs/d3.min.js" "../libs/d3.layout.force3d.js"))
 
 ;;---------------------------------
 
@@ -28,6 +29,9 @@
 
 
 
+
+(def f-xy nil)
+(def f-xyz nil)
 (def force nil)
 
 ;; --------------------------------
@@ -45,8 +49,10 @@
         type (.-type message)
         data (.-data message)]
     (case type
+      ;"select-mode" (select-mode data)
       "start" (start)
       "stop"  (stop)
+      "resume" (resume)
       "set-nodes" (set-nodes data)
       "set-links" (set-links data)
       "precompute" (precompute data)
@@ -56,10 +62,25 @@
 (defn ^:export main
   "Main entry point"
   []  
-  (def force (.force (.-layout js/d3)))
-  (.on force "tick" tick)
+  (def f-xy (.force js/d3.layout))
+  (.on f-xy "tick" tick)
+  (def f-xyz (.force3d js/d3.layout))
+  (.on f-xyz "tick" tick)
+
+  (def force f-xy)
+
   (.addEventListener js/self "message" dispatcher))
 
+
+;(defn select-mode
+;  "Set 2D or 3D"
+;  [mode]
+;  ;(when-not (nil? force)
+;  ;	(stop))
+;  (if (= mode "3D")
+;  	(def force f-xy)
+;  	(def force f-xyz)
+;  nil))
 
 
 (defn start 
@@ -73,10 +94,20 @@
   []
   (.stop force))
 
+(defn resume 
+  "Resume the force"
+  []
+  (.resume force))
+
 (defn set-nodes 
   "Set the nodes list"
-  [nodes]
-  (.nodes force nodes))
+  [nb-nodes]
+  (let [nodes (array)]
+    (loop [i 0]
+      (.push nodes (js-obj))
+      (when (< i nb-nodes)
+        (recur (inc i))))
+    (.nodes force nodes)))
 
 (defn set-links
   "Set the links list"
@@ -127,5 +158,5 @@
 
 
 ;; START
-
-(main)
+;(when (nil? js/document) 
+;	(main))
