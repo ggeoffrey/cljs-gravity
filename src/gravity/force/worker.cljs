@@ -53,6 +53,7 @@
       "start" (start)
       "stop"  (stop)
       "resume" (resume)
+      "tick" (tick)
       "set-nodes" (set-nodes data)
       "set-links" (set-links data)
       "precompute" (precompute data)

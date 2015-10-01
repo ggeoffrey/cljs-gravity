@@ -1,10 +1,10 @@
 (ns gravity.view.graph
-	(:require   [gravity.tools :as t]
+	(:require
+   		[gravity.tools :as t]
 		[gravity.view.node :as node]
 		[gravity.view.nodeset :as points]
 		[gravity.force.proxy :as worker]
 		[gravity.demo :as demo]))
-
 
 
 (defn make-stats
@@ -19,35 +19,57 @@
 		(set! (.-top style) "0px")
 		stats))
 
+(defn fill-window! 
+  "Resize a canvas to make it fill the window"
+  [canvas]
+  (let [width (.-innerWidth js/window)
+        height (.-innerHeight js/window)]
+    (set! (.-width canvas) width)
+    (set! (.-height canvas) height))
+  nil)
+
+
+(declare get-components)
+(declare render-callback)
+(declare onDocMouseMove)
+(declare start-callback!)
+(declare stop-callback!)
+(declare resume-force-callback)
+(declare add-background!)
+(declare add-lights!)
+
 (defn create
 	"Initialise a context in the specified element id"
-	[]
-	(let [scene (new js/THREE.Scene)
-		width (/ (.-innerWidth js/window) 1)
-		height (/ (.-innerHeight js/window) 1)
-		camera (new js/THREE.PerspectiveCamera 75 (/ width height) 0.1 100000 )
-		stats (make-stats)
-		controls (new js/THREE.OrbitControls camera)
-		renderer (new js/THREE.WebGLRenderer #js {"antialias" true})
-  		canvas (.-domElement renderer)
-    	raycaster (new THREE.Raycaster)
-		classifier (.category10 js/d3.scale)
-		data-test (demo/get-demo-graph)
+	[user-map dev-mode]
+	(let [{	scene :scene
+			width :width
+			height :height
+			camera :camera
+			stats :stats
+			controls :controls
+			renderer :renderer
+			raycaster :raycaster
+			classifier :classifier
+			force-worker :force-worker
+			state :state} (get-components user-map dev-mode)
+       	  canvas (if-not (nil? (:canvas user-map))
+                   (:canvas user-map)
+                   (.-domElement renderer))
+			data-test (demo/get-demo-graph)
 		  ;gen-nodes (clj->js (mapv #(js-obj) (range 0 2000)))
 		  {nodes :nodes
-		  	colliders :colliders} (points/prepare-nodes (.-nodes data-test))
+		  	colliders :colliders} (points/prepare-nodes (.-nodes data-test) classifier)
 
-		links (.-links data-test)
-		nodeset (points/create nodes classifier)
-		links-set (points/create-links nodes links)
-		force-worker (worker/create "force-worker/worker.js")
-		state (atom {:should-run true})
-		render (render-callback renderer scene camera stats state)]
+		  	links (.-links data-test)
+		  	nodeset (points/create nodes classifier)
+		  	links-set (points/create-links nodes links)
+		  	render (render-callback renderer scene camera stats state)]
 
 
 		(.setSize renderer width height)
 		(.setClearColor renderer 0x000000)
-		(set! (.-z (.-position camera))  250)
+		(set! (.-z (.-position camera))  50)
+ 
   
 		(worker/listen force-worker (fn [event]
 			(let [message (.-data event)
@@ -61,15 +83,20 @@
 
 	;(worker/send force-worker "select-mode" "2D")
 
+	(if-not dev-mode
+	   	(do
+	       	(worker/send force-worker "set-nodes" (.-length nodes))
+			(worker/send force-worker "set-links" links)
+			(worker/send force-worker "start"))
+     	(do
+        	(fill-window! canvas)
+        	(worker/send force-worker "tick")))
 	
-	(worker/send force-worker "set-nodes" (.-length nodes))
-	(worker/send force-worker "set-links" links)
-	(worker/send force-worker "start")
 
 	;(worker/send force-worker "precompute" 50)
 	
 
-	(.add scene nodeset)
+	;(.add scene nodeset)
  	
 	(loop [i 0]
 		(.add scene (aget colliders i))
@@ -81,6 +108,8 @@
  
  	(.addEventListener canvas "mousemove" (onDocMouseMove canvas camera raycaster colliders))
 
+  	(add-background! scene) 
+   	(add-lights! scene)
  	(render)
   
 	(clj->js {:start (start-callback! state render)
@@ -93,6 +122,34 @@
 	))
 
 
+(defn get-components
+	"Generate or re-use all the necessary components of the 3D view"
+	[user-map dev-mode]
+ 	(if dev-mode
+    	(fill-window! (:canvas user-map)))
+  
+ 	(let [width (.-width (:canvas user-map))
+          height (.-height (:canvas user-map))
+          camera (new js/THREE.PerspectiveCamera 75 (/ width height) 0.1 100000 )]
+    	
+	    {	:scene (new js/THREE.Scene)
+			:width width
+			:height height
+			:camera camera
+			:stats (if-not (nil? (:stats user-map))
+	           			(:stats user-map)
+	              		(make-stats))
+			:controls (new js/THREE.OrbitControls camera)
+			:renderer (new js/THREE.WebGLRenderer #js {"antialias" true
+	                                             		"canvas" (:canvas user-map)})
+	  		:raycaster (new THREE.Raycaster)
+			:classifier (.category10 js/d3.scale)
+	  		:force-worker (if-not (nil? (:force-worker user-map))
+	                    	(:force-worker user-map)
+	                     	(worker/create "force-worker/worker.js"))
+	    	:state (atom {:should-run true})}))
+
+
 (defn- render-callback
 	"Return a function rendering the context"
 	[renderer scene camera stats state]
@@ -102,7 +159,7 @@
 
 		(if (get @state :should-run)
 			(do 
-     			(.requestAnimationFrame js/window render 50)
+     			(.requestAnimationFrame js/window render)
 				(.render renderer scene camera)))
 
 		(when-not (nil? stats)
@@ -151,15 +208,16 @@
 	                (* 2)
 	                (+ 1))
               cam-position (.-position camera)]
-	      ;(t/log x y)
+	      ;(log x y)
        	  (.set mouse-pos x y 1)
        	  (.unproject mouse-pos camera)
-          ;(t/log mouse-pos)
-          ;(t/log (.normalize (.sub mouse-pos cam-position)))
+          ;(log mouse-pos)
+          ;(log (.normalize (.sub mouse-pos cam-position)))
           (.set raycaster cam-position (.normalize (.sub mouse-pos cam-position)))
           (let [item (aget (.intersectObjects raycaster colliders) 0)]
             (when-not (nil? item)
-              (t/log (-> item (.-object) (.-node))))))
+              ;(t/log (-> item (.-object) (.-node)))
+              )))
      false)))
 
 (defn get-targets
@@ -167,3 +225,40 @@
   Return the first intersected or nil"
   []
   )
+
+
+
+
+
+(defn- add-background!
+  "Generate a gray sphere as a background"
+  [scene]
+  (let [material (new js/THREE.MeshLambertMaterial #js {"color" 0xa0a0a0
+                                                        ;"ambiant"  0xffffff
+                                                        "side" 1})
+        geometry (new js/THREE.SphereGeometry 20 20 20)
+        background (new js/THREE.Mesh geometry material)]
+    (.set (.-scale background) 200 200 200)
+    (.add scene background)))
+
+
+(defn add-lights! 
+  "Add lights into the scene"
+  [scene]
+  (let [color (new js/THREE.Color 0xffffff)
+        strength   0.6
+        shadow-map 2048
+        pos [[3000 3000 3000]
+             [-3000 3000 3000]
+             [-3000 -3000 3000]
+             [3000 -3000 3000]
+             
+             [3000 3000 -3000]]]
+    	(doall (map (fn [pos]
+            (let [light (new js/THREE.SpotLight color strength)]
+            
+              
+              (.set (.-position light) (first pos) (nth pos 1) (last pos))
+              (.add scene light))
+            ) pos))
+     nil))

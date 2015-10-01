@@ -1,6 +1,5 @@
 (ns gravity.tools)
 
-
 (defn- get-args 
   "Return the first arg or all the list as a js-obj"
   [coll]
