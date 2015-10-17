@@ -27,4 +27,6 @@ pom.xml
 .lein-repl-history
 .lein-plugins/
 .repl
-.nrepl-port
+*.sublime-workspace
+project.sublime-project
+*.nrepl-port

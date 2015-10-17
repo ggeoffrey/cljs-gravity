@@ -1,35 +1,38 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">    
-    <link href="css/style.css" rel="stylesheet" type="text/css">
-  </head>
-  <body>
-    <div id="counter"></div>
-    <canvas id="target"></canvas>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="css/style.css" rel="stylesheet" type="text/css">
+    </head>
+    <body>
+        <div id="counter"></div>
+        <canvas id="target"></canvas>
 
 
-    <script src="libs/three.min.js"></script>
-    <script src="libs/OrbitControls.js"></script>
-    <script src="libs/d3.min.js"></script>
-    <script src="libs/stats.min.js"></script>
-
-    <script src="js/compiled/gravity.js" type="text/javascript"></script>
-    <script>
-
-    function start () {
-      var canvas = document.getElementById('target');
-      gravity.core.init_dev_mode(canvas);
-      var gg = gravity.core.on_js_reload();
-
-      document.body.appendChild(gg.stats);
-      window.gg = gg;
-    }
+        <script src="libs/three.min.js"></script>
+        <script src="libs/OrbitControls.js"></script>
+        <script src="libs/d3.min.js"></script>
+        <script src="libs/stats.min.js"></script>
 
 
-    start();
 
-    </script>
-  </body>
+        <script src="js/compiled/gravity.js" type="text/javascript"></script>
+        <script>
+
+            function start () {
+                var canvas = document.getElementById('target');
+                gravity.core.init_dev_mode(canvas);
+                var gg = gravity.core.on_js_reload();
+
+                document.body.appendChild(gg.stats);
+                window.gg = gg;
+            }
+
+
+            start();
+
+        </script>
+
+    </body>
 </html>
