@@ -51,14 +51,15 @@
 
 
 (defn create
-	"Return a cloned node with a random position and a collider object"
-	[node classifier]
- 	(let [ext 2000
- 		  node (.clone js/goog.object node)
-     	  collider (generate-collider node classifier)
-          position (new js/THREE.Vector3 (get-rand-pos ext) (get-rand-pos ext) 0)]
- 		(set! (.-position node) position)
-   		(set! (.-collider node) collider)
-     	(set! (.-node collider) node)
- 		node))
+  "Return a cloned node with a random position and a collider object"
+  [node classifier]
+  (let [ext 2000
+        node (.clone js/goog.object node)
+        collider (generate-collider node classifier)
+        position (new js/THREE.Vector3 (get-rand-pos ext) (get-rand-pos ext) 0)]
+    (set! (.-position node) position)
+    (set! (.-collider node) collider)
+    (set! (.-castShadow collider) true)
+    (set! (.-node collider) node)
+    node))
 

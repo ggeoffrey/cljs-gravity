@@ -1,8 +1,9 @@
 (ns ^:figwheel-always gravity.core
     (:require [gravity.view.graph :as graph]
+              [gravity.view.tools :as tools]
               [gravity.events :as events]
               [gravity.force.proxy :as worker]
-              [gravity.tools :as t]))
+              [gravity.tools :refer [log]]))
 
 (enable-console-print!)
 
@@ -36,13 +37,12 @@
   "Set some params to use live-reload in dev mode"
   [canvas]
   (swap! app-state assoc-in [:force-worker] (worker/create "force-worker/worker.js"))
-  (swap! app-state assoc-in [:stats] (graph/make-stats))
+  (swap! app-state assoc-in [:stats] (tools/make-stats))
   (swap! app-state assoc-in [:canvas] canvas)
 
   (let [graph (main @app-state false)]
     (swap! app-state assoc-in [:last-instance] graph)
-    graph)
-)
+    graph))
 
 
 (defn on-js-reload []
@@ -53,7 +53,6 @@
   (when-not (nil? (:last-instance @app-state))
     (.stop (:last-instance @app-state))
     (let [graph (main @app-state true)]
-    	(swap! app-state assoc-in [:last-instance] graph)
-    	graph))
-)
+      (swap! app-state assoc-in [:last-instance] graph)
+      graph)))
 
