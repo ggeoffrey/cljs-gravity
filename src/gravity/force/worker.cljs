@@ -1,10 +1,9 @@
-(when-not (undefined? js/self.importScripts)
+(when-not (undefined? js/self.importScripts) 
 	(.importScripts js/self "../libs/d3.min.js" "../libs/d3.layout.force3d.js"))
 
 ;;---------------------------------
 
-(ns gravity.force.worker
-  (:require [gravity.tools :as t]))
+(ns gravity.force.worker)
 
 (defn answer
   "Post a message back"
@@ -13,12 +12,12 @@
   ([message data]
   	(.postMessage js/self (clj->js message) (clj->js data))))
 
-(defn log
+(defn log 
   "Log in the console"
   [args]
   (.log js/console "[force.worker/log]: " args))
 
-(defn warn
+(defn warn 
   "Warn in the console"
   [args]
   (.warn js/console "[force.worker/warn]: " args))
@@ -31,9 +30,9 @@
 
 
 
-(def ^:dynamic f-xy nil)
-(def ^:dynamic f-xyz nil)
-(def ^:dynamic force nil)
+(def f-xy nil)
+(def f-xyz nil)
+(def force nil)
 
 ;; --------------------------------
 
@@ -42,10 +41,10 @@
 (declare tick)
 
 
-(defn dispatcher
+(defn dispatcher 
   "Dispatch a message to the corresponding action (route)."
   [event]
-
+  
   (let [message (.-data event)
         type (.-type message)
         data (.-data message)]
@@ -63,7 +62,7 @@
 
 (defn ^:export main
   "Main entry point"
-  []
+  []  
   (def f-xy (.force js/d3.layout))
   (.on f-xy "tick" tick)
   (def f-xyz (.force3d js/d3.layout))
@@ -74,24 +73,34 @@
   (.addEventListener js/self "message" dispatcher))
 
 
+;(defn select-mode
+;  "Set 2D or 3D"
+;  [mode]
+;  ;(when-not (nil? force)
+;  ;	(stop))
+;  (if (= mode "3D")
+;  	(def force f-xy)
+;  	(def force f-xyz)
+;  nil))
 
-(defn start
+
+(defn start 
   "start the force"
   []
   (log "starting force")
   (.start force))
 
-(defn stop
+(defn stop 
   "Stop the force"
   []
   (.stop force))
 
-(defn resume
+(defn resume 
   "Resume the force"
   []
   (.resume force))
 
-(defn set-nodes
+(defn set-nodes 
   "Set the nodes list"
   [nb-nodes]
   (let [nodes (array)]
@@ -107,7 +116,7 @@
   (.links force links))
 
 
-(defn precompute
+(defn precompute 
   	"Force the layout to precompute"
 	[steps]
 	(if (or (< steps 0) (nil? steps))
@@ -125,7 +134,7 @@
         	)))
 
 
-(defn tick
+(defn tick 
   "Tick function for the force layout"
   [_]
   (let [nodes (.nodes force)
@@ -150,5 +159,5 @@
 
 
 ;; START
-;(when (nil? js/document)
+;(when (nil? js/document) 
 ;	(main))
