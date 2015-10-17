@@ -1,9 +1,18 @@
 (ns gravity.view.node)
 
 
-(declare get-unique-color)
 
-(defn get-rand-pos 
+(defn- get-color   ;; TODO
+  "Give a color for a given node"
+  [node classifier]
+  (let [key (.-group node)]
+    (new js/THREE.Color (classifier key))))
+
+(def get-unique-color
+  (memoize get-color))
+
+
+(defn get-rand-pos
   "Give a random position between -extent and +extent"
   [extent]
   (- (rand (* extent 2)) extent))
@@ -53,13 +62,3 @@
      	(set! (.-node collider) node)
  		node))
 
-
-
-(defn- get-color   ;; TODO
-  "Give a color for a given node"
-  [node classifier]
-  (let [key (.-group node)]
-    (new js/THREE.Color (classifier key))))
-
-(def get-unique-color
-  (memoize get-color))
