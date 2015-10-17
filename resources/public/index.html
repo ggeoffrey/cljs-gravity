@@ -27,14 +27,16 @@
                 window.gg = gg;
 
                 gg.on("nodeover", function(node){
-                    console.log(["over", node]);
+                    canvas.style.cursor = "pointer";
                 });
 
                  gg.on("nodeblur", function(){
-                    console.log("blur");
+                    canvas.style.cursor = "inherit";
                 });
 
-
+                gg.on("nodeselect", function(node){
+                    alert(node.name);
+                });
             }
 
 

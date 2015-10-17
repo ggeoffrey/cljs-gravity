@@ -58,7 +58,7 @@
         collider (generate-collider node classifier)
         position (new js/THREE.Vector3 (get-rand-pos ext) (get-rand-pos ext) 0)]
     (set! (.-position node) position)
-    (set! (.-collider node) collider)
+    (set! (.-mesh node) collider)
     (set! (.-castShadow collider) true)
     (set! (.-node collider) node)
     node))

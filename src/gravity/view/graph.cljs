@@ -132,10 +132,10 @@
         data-test (demo/get-demo-graph)
         ;gen-nodes (clj->js (mapv #(js-obj) (range 0 1000)))
         {nodes :nodes
-         colliders :colliders} (points/prepare-nodes (.-nodes data-test) classifier)
+         meshes :meshes} (points/prepare-nodes (.-nodes data-test) classifier)
 
         links (.-links data-test)
-        nodeset (points/create nodes classifier)
+        ;;nodeset (points/create nodes classifier)
         links-set (points/create-links nodes links)
         render (render-callback renderer scene camera stats state)]
 
@@ -157,7 +157,7 @@
                                          data (.-data message)]
                                      (case type
                                        "nodes-positions" (do (points/update-positions! nodes data)
-                                                           (points/update nodeset)
+                                                           ;;(points/update nodeset)
                                                            (points/update links-set))))))
 
 
@@ -165,7 +165,7 @@
 
     (if-not dev-mode
       (do
-        (worker/send force-worker "set-nodes" (.-length nodes))
+        (worker/send force-worker "set-nodes" (count nodes))
         (worker/send force-worker "set-links" links)
         (worker/send force-worker "start"))
       (do
@@ -176,14 +176,15 @@
     ;(worker/send force-worker "precompute" 50)
 
     ;; adding nodes
-    (doseq [item colliders]
+    (doseq [item meshes]
       (.add scene item))
 
     ;; adding links
     (.add scene links-set)
 
 
-    (.addEventListener canvas "mousemove" (events/onDocMouseMove canvas camera raycaster colliders chan))
+    (.addEventListener canvas "mousemove" (events/onDocMouseMove canvas camera raycaster meshes chan))
+    (.addEventListener canvas "click" (events/on-click canvas camera raycaster meshes chan))
     (.addEventListener js/window "resize" (events/onWindowResize canvas renderer camera))
 
     ;; add background
@@ -198,7 +199,6 @@
      :stop (stop-callback! state)
      :resume (resume-force-callback force-worker)
      :canvas (.-domElement renderer)
-     :scene scene
      :stats (.-domElement stats)}))
 
 

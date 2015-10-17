@@ -3,7 +3,7 @@
    [gravity.macros :refer [λ]]
    [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :refer [<! chan]]
-            [gravity.tools :as t]))
+            [gravity.tools :refer [log]]))
 
 
 
@@ -47,13 +47,20 @@
 
 
 (defn- trigger-nodeover
-  "If the mouse hovered a node, trigger call the callback"
+  "If the mouse hovered a node"
   [event state store]
   (let [store (get-callbacks store)
         callback (:nodeover store)]
     (when (nil? (:target @state))
       (swap! state assoc :target (:target event))
       (trigger callback (:target event)))))
+
+(defn- trigger-select-node
+  "If the mouse click a node"
+  [event state store]
+  (let [store (get-callbacks store)
+        callback (:nodeselect store)]
+    (trigger callback (:target event))))
 
 
 (defn- trigger-nodeblur
@@ -81,6 +88,7 @@
          (case (:type event)
            :mouse-in-node (trigger-nodeover event state store)
            :mouse-out-node (trigger-nodeblur event state store)
+           :select-node (trigger-select-node event state store)
            nil)
          )))))
 

@@ -52,6 +52,19 @@
      false))
 
 
+(defn on-click
+  "Callback for the click event"
+  [canvas camera raycaster colliders chan]
+  (λ [event]
+     (.preventDefault event)
+     (let [target (get-target event canvas camera raycaster colliders)]
+       (when-not (nil? target)
+         (let [node (.-node (.-object target))]
+           (go (>! chan {:type :select-node
+                         :target node})))))
+     false))
+
+
 (defn onWindowResize
   "Callback for the window-resize event"
   [canvas renderer camera]
@@ -61,7 +74,8 @@
            height (.-innerHeight js/window)]
        (set! (.-aspect camera) (/ width height))
        (.updateProjectionMatrix camera)
-       (.setSize renderer width height))))
+       (.setSize renderer width height))
+     false))
 
 
 
