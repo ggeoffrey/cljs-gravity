@@ -14,7 +14,7 @@
 
 
 
-;; Init parameters
+;; Init parameters for the view
 
 
 (defn get-components

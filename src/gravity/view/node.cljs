@@ -31,8 +31,8 @@
   "Generate a generic material"
   [color-key]
   (new js/THREE.MeshLambertMaterial (clj->js {:color (new js/THREE.Color color-key)
-                                            :visible true
-                                            :wireframe false})))
+                                              :visible true
+                                              :wireframe false})))
 
 
 (def get-unique-material
