@@ -1,4 +1,4 @@
-(when-not (undefined? js/self.importScripts) 
+(when-not (undefined? js/self.importScripts)
 	(.importScripts js/self "../libs/d3.min.js" "../libs/d3.layout.force3d.js"))
 
 ;;---------------------------------
@@ -12,20 +12,20 @@
   ([message data]
   	(.postMessage js/self (clj->js message) (clj->js data))))
 
-(defn log 
+(defn log
   "Log in the console"
   [args]
   (.log js/console "[force.worker/log]: " args))
 
-(defn warn 
+(defn warn
   "Warn in the console"
   [args]
   (.warn js/console "[force.worker/warn]: " args))
 
 (defn str
-	[& args]
-	(let [arr (clj->js args)]
-		(.join arr "")))
+  [& args]
+  (let [arr (clj->js args)]
+    (.join arr "")))
 
 
 
@@ -38,13 +38,36 @@
 
 
 
-(declare tick)
+
+(defn tick
+  "Tick function for the force layout"
+  [_]
+  (let [nodes (.nodes force)
+        size (dec (.-length nodes))
+        arr (new js/Float32Array (* size 3))
+        buffer (.-buffer arr)]
+    (loop [i 0]
+      (let [j (* i 3)
+            node (aget nodes i)]
+        (aset arr j (.-x node))
+        (aset arr (+ j 1) (.-y node))
+        (if (js/isNaN (.-z node))
+          (aset arr (+ j 2) 0)
+          (aset arr (+ j 2) (.-z node))))
+      (when (< i size)
+        (recur (inc i))))
+
+    (answer {:type "nodes-positions" :data arr} [buffer])))
 
 
-(defn dispatcher 
+
+
+
+
+(defn dispatcher
   "Dispatch a message to the corresponding action (route)."
   [event]
-  
+
   (let [message (.-data event)
         type (.-type message)
         data (.-data message)]
@@ -53,6 +76,7 @@
       "start" (start)
       "stop"  (stop)
       "resume" (resume)
+      "tick" (tick)
       "set-nodes" (set-nodes data)
       "set-links" (set-links data)
       "precompute" (precompute data)
@@ -61,7 +85,7 @@
 
 (defn ^:export main
   "Main entry point"
-  []  
+  []
   (def f-xy (.force js/d3.layout))
   (.on f-xy "tick" tick)
   (def f-xyz (.force3d js/d3.layout))
@@ -83,23 +107,23 @@
 ;  nil))
 
 
-(defn start 
+(defn start
   "start the force"
   []
   (log "starting force")
   (.start force))
 
-(defn stop 
+(defn stop
   "Stop the force"
   []
   (.stop force))
 
-(defn resume 
+(defn resume
   "Resume the force"
   []
   (.resume force))
 
-(defn set-nodes 
+(defn set-nodes
   "Set the nodes list"
   [nb-nodes]
   (let [nodes (array)]
@@ -115,48 +139,26 @@
   (.links force links))
 
 
-(defn precompute 
-  	"Force the layout to precompute"
-	[steps]
-	(if (or (< steps 0) (nil? steps))
-   		(do
-       		;;(log "PAS OK")
-       		(.log js/console "Precomputing layout with default value. Argument given was <0. Expected unsigned integer, Given:" steps )
-         	(precompute 50))
-     	(do
-        	(let [start (.now js/Date)]
-        		(.on force "tick" nil)
-	      		(dotimes [i steps]
-					(.tick force))
-	       		(.on force "tick" tick)
-        		(log (str "Pre-computed in " (/ (- (.now js/Date) start) 1000) "ms.")))
-        	)))
+(defn precompute
+  "Force the layout to precompute"
+  [steps]
+  (if (or (< steps 0) (nil? steps))
+    (do
+      (.log js/console "Precomputing layout with default value. Argument given was <0. Expected unsigned integer, Given:" steps )
+      (precompute 50))
+    (do
+      (let [start (.now js/Date)]
+        (.on force "tick" nil)
+        (dotimes [i steps]
+          (.tick force))
+        (.on force "tick" tick)
+        (log (str "Pre-computed in " (/ (- (.now js/Date) start) 1000) "ms.")))
+      )))
 
 
-(defn tick 
-  "Tick function for the force layout"
-  [_]
-  (let [nodes (.nodes force)
-        size (dec (.-length nodes))
-        arr (new js/Float32Array (* size 3))
-        buffer (.-buffer arr)]
-    (loop [i 0]
-        (let [j (* i 3)
-           	  node (aget nodes i)]
-	      (aset arr j (.-x node))
-	      (aset arr (+ j 1) (.-y node))
-	      (if (js/isNaN (.-z node))
-	      	(aset arr (+ j 2) 0)
-	      	(aset arr (+ j 2) (.-z node))))
-		(when (< i size)
-        	(recur (inc i))))
-
-    (answer {:type "nodes-positions"
-             :data arr}
-            [buffer])))
 
 
 
 ;; START
-;(when (nil? js/document) 
+;(when (nil? js/document)
 ;	(main))
