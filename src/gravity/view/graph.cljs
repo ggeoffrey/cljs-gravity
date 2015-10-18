@@ -31,17 +31,14 @@
       :width width
       :height height
       :camera camera
-      :stats (if-not (nil? (:stats user-map))
-               (:stats user-map)
-               (tools/make-stats))
+      :stats (:stats user-map)
       :controls (new js/THREE.OrbitControls camera)
       :renderer (new js/THREE.WebGLRenderer #js {"antialias" true
                                                  "canvas" (:canvas user-map)})
       :raycaster (new THREE.Raycaster)
-      :classifier (.category10 js/d3.scale)
-      :force-worker (if-not (nil? (:force-worker user-map))
-                      (:force-worker user-map)
-                      (worker/create "force-worker/worker.js"))
+      :classifier (:color user-map)
+      :force-worker (:force-worker user-map)
+
       :state (atom {:should-run true})
       :first-run (:first-run user-map)}))
 

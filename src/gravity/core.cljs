@@ -53,7 +53,9 @@
   (let [user-map (js->clj user-map :keywordize-keys true)
         webgl-params (:webgl user-map)
         force-params (:force user-map)
-        color (:color user-map)
+        color (if (:color user-map)
+                (:color user-map)
+                (:color default-parameters))
         force-merged (merge (:force default-parameters) force-params)
         webgl-merged (merge (:webgl default-parameters) webgl-params)]
     {:color color
