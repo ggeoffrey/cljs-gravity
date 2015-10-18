@@ -42,7 +42,8 @@
       :force-worker (if-not (nil? (:force-worker user-map))
                       (:force-worker user-map)
                       (worker/create "force-worker/worker.js"))
-      :state (atom {:should-run true})}))
+      :state (atom {:should-run true})
+      :first-run (:first-run user-map)}))
 
 
 
@@ -114,7 +115,8 @@
 (defn create
   "Initialise a context in the specified element id"
   [user-map chan dev-mode]
-  (let [{	scene :scene
+  (let [{	first-run :first-run
+          scene :scene
           width :width
           height :height
           camera :camera
@@ -161,18 +163,22 @@
                                                            (points/update links-set))))))
 
 
-    ;(worker/send force-worker "select-mode" "2D")
 
-    (if-not dev-mode
-      (do
+    ;; IF the app run for the first time in dev mode
+    ;; OR in classic -not dev- mode
+    (when (or (not dev-mode) first-run)
         (worker/send force-worker "set-nodes" (count nodes))
         (worker/send force-worker "set-links" links)
         (worker/send force-worker "start"))
-      (do
-        (tools/fill-window! canvas)
-        (.removeEventListener canvas "mousemove")
-        (.removeEventListener canvas "click")
-        (worker/send force-worker "tick")))
+
+    ;; if it's not the first time in dev mode
+    (when (and (not first-run) dev-mode)
+      (tools/fill-window! canvas)
+      (.removeEventListener canvas "mousemove")
+      (.removeEventListener canvas "click")
+      (worker/send force-worker "tick"))
+
+
 
 
     ;(worker/send force-worker "precompute" 50)
@@ -201,7 +207,7 @@
      :stop (stop-callback! state)
      :resume (resume-force-callback force-worker)
      :canvas (.-domElement renderer)
-     :stats (.-domElement stats)}))
+     :stats stats}))
 
 
 

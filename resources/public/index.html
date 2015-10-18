@@ -20,10 +20,11 @@
 
             function start () {
                 var canvas = document.getElementById('target');
-                gravity.core.init_dev_mode(canvas);
-                var gg = gravity.core.on_js_reload();
+                var gg = gravity.core.init_dev_mode({
+                    canvas: canvas
+                });
 
-                document.body.appendChild(gg.stats);
+                document.body.appendChild(gg.stats.domElement);
                 window.gg = gg;
 
                 /*
