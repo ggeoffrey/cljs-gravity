@@ -1,9 +1,10 @@
 (ns ^:figwheel-always gravity.core
-    (:require [gravity.view.graph :as graph]
-              [gravity.view.tools :as tools]
-              [gravity.events :as events]
-              [gravity.force.proxy :as worker]
-              [gravity.tools :refer [log]]))
+  (:require [gravity.view.graph :as graph]
+            [gravity.view.tools :as tools]
+            [gravity.events :as events]
+            [gravity.force.proxy :as worker]
+            [gravity.tools :refer [log]])
+  (:require-macros [gravity.macros :refer [λ]]))
 
 (enable-console-print!)
 
@@ -13,6 +14,24 @@
                           :canvas nil
                           :stats nil}))
 
+
+
+(defn bind-dev-events
+  [graph]
+  (let [{on :on
+         canvas :canvas} graph]
+    (on "nodeover" (λ [node]
+                      (set! (-> canvas .-style .-cursor) "pointer")))
+    (on "nodeblur" (λ []
+                      (set! (-> canvas .-style .-cursor) "inherit")))
+    (on "nodeselect" (λ [node]
+                        (log [:select (.-name node) node])))))
+
+
+(defn unbind-old-events
+  [last-instance]
+  (let [off (-> last-instance .-off)]
+    (off)))
 
 
 (defn ^:export main
@@ -25,11 +44,10 @@
    (let [chan (events/create-chan)
          store (events/create-store)
          graph (graph/create user-map chan dev-mode)
-         graph (assoc graph :on (:on store))]
+         graph (merge graph store)]
      (events/listen chan store)
-     (clj->js graph)))
-
-  )
+     (bind-dev-events graph)
+     (clj->js graph))))
 
 
 
@@ -50,9 +68,12 @@
   ;; your application
   ;(swap! app-state update-in [:__figwheel_counter] inc)
 
-  (when-not (nil? (:last-instance @app-state))
-    (.stop (:last-instance @app-state))
-    (let [graph (main @app-state true)]
-      (swap! app-state assoc-in [:last-instance] graph)
-      graph)))
+  (let [state @app-state
+        last-instance (:last-instance state)]
+    (when-not (nil? last-instance)
+      (unbind-old-events last-instance)
+      (.stop last-instance)
+      (let [graph (main state true)]
+        (swap! app-state assoc-in [:last-instance] graph)
+        graph))))
 

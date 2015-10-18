@@ -26,6 +26,11 @@
     ;;return 'on'
     {:on (λ [cb-key callback]
             (swap! callbacks-map assoc (keyword cb-key) callback))
+     :off (fn
+            ([]
+             (reset! callbacks-map {}))
+            ([cb-key]
+             (swap! callbacks-map assoc (keyword cb-key) nil)) )
 
      :get-callbacks (λ [] @callbacks-map)}))
 

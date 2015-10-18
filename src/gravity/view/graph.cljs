@@ -170,6 +170,8 @@
         (worker/send force-worker "start"))
       (do
         (tools/fill-window! canvas)
+        (.removeEventListener canvas "mousemove")
+        (.removeEventListener canvas "click")
         (worker/send force-worker "tick")))
 
 
