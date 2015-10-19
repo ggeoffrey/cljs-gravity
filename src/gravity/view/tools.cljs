@@ -45,8 +45,14 @@
     background))
 
 
-(defn- get-lights
-  "Add lights into the scene"
+
+(defn- get-flat-light
+  "Generate an ambient light"
+  []
+  (new js/THREE.AmbientLight 0xffffff))
+
+
+(defn- get-spot-lights
   []
   (let [color (new js/THREE.Color 0xffffff)
         strength   0.8
@@ -70,3 +76,11 @@
       (set! (.-shadowCameraVisible main-light) true))
 
     lights))
+
+
+(defn get-lights
+  "Make light(s) for the scene. If spots is true, generate directional lights"
+  [spots]
+  (if-not spots
+    (conj [] (get-flat-light))
+    (get-spot-lights)))

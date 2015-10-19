@@ -23,7 +23,8 @@
   (if dev-mode
     (tools/fill-window! (:canvas user-map)))
 
-  (let [width (.-width (:canvas user-map))
+  (let [webgl-params (:webgl user-map)
+        width (.-width (:canvas user-map))
         height (.-height (:canvas user-map))
         camera (new js/THREE.PerspectiveCamera 75 (/ width height) 0.1 100000 )]
 
@@ -33,11 +34,11 @@
       :camera camera
       :stats (:stats user-map)
       :controls (new js/THREE.OrbitControls camera)
-      :renderer (new js/THREE.WebGLRenderer #js {"antialias" true
-                                                 "canvas" (:canvas user-map)})
+      :renderer (new js/THREE.WebGLRenderer #js {:antialias (:antialias webgl-params)
+                                                 :canvas (:canvas user-map)})
       :raycaster (new THREE.Raycaster)
       :classifier (:color user-map)
-      :force-worker (:force-worker user-map)
+      :force-worker (worker/create "force-worker/worker.js" (:force user-map))
 
       :state (atom {:should-run true})
       :first-run (:first-run user-map)}))
@@ -143,12 +144,14 @@
     (.setSize renderer width height)
     (.setClearColor renderer 0x000000)
 
-      ;;shadows
-      (set! (.-enabled (.-shadowMap renderer)) true)
-      (set! (.-type (.-shadowMap renderer)) js/THREE.PCFSoftShadowMap)
+    ;;shadows
+    (when (:shadows (:webgl user-map))
+      (set! (-> renderer .-shadowMap .-enabled) true)
+      (set! (-> renderer .-shadowMap .-type) js/THREE.PCFSoftShadowMap))
+
+
 
     (set! (.-z (.-position camera))  50)
-
 
     (worker/listen force-worker (λ [event]
                                    (let [message (.-data event)
@@ -166,7 +169,8 @@
     (when (or (not dev-mode) first-run)
         (worker/send force-worker "set-nodes" (count nodes))
         (worker/send force-worker "set-links" links)
-        (worker/send force-worker "start"))
+        (worker/send force-worker "start")
+      )
 
     ;; if it's not the first time in dev mode
     (when (and (not first-run) dev-mode)
@@ -192,11 +196,15 @@
     (.addEventListener canvas "click" (events/on-click canvas camera raycaster meshes chan))
     (.addEventListener js/window "resize" (events/onWindowResize canvas renderer camera))
 
-    ;; add background
-    (.add scene (tools/get-background))
-    ;; add lights
-    (doseq [light (tools/get-lights)]
-      (.add scene light))
+    (let [webgl-params (:webgl user-map)]
+      ;; add background
+      (when (:background webgl-params)
+        (.add scene (tools/get-background)))
+
+      ;; add lights
+      (doseq [light (tools/get-lights (:lights webgl-params))]
+        (.add scene light)))
+
 
     (render)
 

@@ -8,32 +8,6 @@
 (declare get-unique-color)
 (declare get-shader-material)
 
-;; (defn create
-;;   "Create a new Points (formerly ParticleSystem) gives a set of nodes and a color classifier"
-;;   [nodes classifier]
-;;   (let [geometry (new js/THREE.Geometry)
-;;         material-params { :size 10
-;;                           :map (.loadTexture js/THREE.ImageUtils "assets/img/circle.png")
-;;                           :blending js/THREE.AdditiveBlending
-;;                           :transparent true
-;;                           :vertexColors true
-;;                           :alphaTest 0.5}
-;;         material (new js/THREE.PointsMaterial (clj->js material-params))
-;;         particle-system (new js/THREE.Points geometry material)
-;;         colors (.-colors geometry)]
-
-;;     (set! (.-colors geometry) #js [])
-;;     (loop [i 0]
-;;       (let [node (aget nodes i)]
-;;         (.push colors (get-unique-color classifier node ))
-;;         (.push (.-vertices geometry) (.-position node)))
-;;       (when (< i (dec (.-length nodes)))
-;;         (recur (inc i))))
-;;     (set! (.-verticesNeedUpdate geometry) true)
-;;     (set! (.-colors geometry) colors)
-;;     (set! (.-colorsNeedUpdate  geometry) true)
-
-;;     particle-system))
 
 
 
@@ -50,14 +24,6 @@
             target (get nodes (.-target link))]
         (.push vertices (.-position source))
         (.push vertices (.-position target))))
-;;     (loop [i 0]
-;;       (let [link (aget links i)
-;;             source (aget nodes (.-source link))
-;;             target (aget nodes (.-target link))]
-;;         (.push vertices (.-position source))
-;;         (.push vertices (.-position target)))
-;;       (when (< i size)
-;;         (recur (inc i))))
     (set! (.-verticesNeedUpdate geometry) true)
     (set! (.-castShadow system) true)
     system))
@@ -73,19 +39,7 @@
                         [prepared-node mesh]))
                    nodes)]
     {:nodes (clj->js (mapv first pairs))
-     :meshes (clj->js (mapv last pairs))})
-;;   (let [clone-arr (array)
-;;         colliders-arr (array)]
-;;     (loop [i 0]
-;;       (let [node (aget nodes i)
-;;             prepared-node (node/create node classifier)]
-;;         (.push clone-arr prepared-node)
-;;         (.push colliders-arr (.-collider prepared-node)))
-;;       (when (< i (dec (.-length nodes)))
-;;         (recur (inc i))))
-;;     {:nodes clone-arr
-;;      :meshes colliders-arr})
-  )
+     :meshes (clj->js (mapv last pairs))}))
 
 
 (defn update

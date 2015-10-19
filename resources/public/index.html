@@ -21,7 +21,17 @@
             function start () {
                 var canvas = document.getElementById('target');
                 var gg = gravity.core.init_dev_mode({
-                    canvas: canvas
+                    canvas: canvas,
+//                     color : d3.scale.category10(),
+//                     webgl: {
+//                         background: true,
+//                         lights: true,
+//                         shadows : true,
+//                         antialias : true
+//                     },
+//                     force : {
+//                         //charge : -100,
+//                     }
                 });
 
                 document.body.appendChild(gg.stats.domElement);
