@@ -104,6 +104,26 @@
     (.on force-instance "tick" tick)
     force-instance))
 
+
+(defn- update-nodes-array
+  "Add or remove the good amount of nodes and keep their positions"
+  [current-array nb-nodes]
+  (let [size (count current-array)]
+    (if (= size nb-nodes)
+      current-array
+      ;else
+      (if (< size nb-nodes)
+        (let [diff (- nb-nodes size)]
+          (doseq [i (range 0 diff)]
+            (.push current-array #js {}))
+          current-array)
+        ;else (> size nb-nodes)
+        (let [diff (- size nb-nodes)]
+          (.splice current-array nb-nodes diff)
+          current-array)))))
+
+
+
 (defn start
   "start the force"
   []
@@ -125,10 +145,13 @@
 (defn set-nodes
   "Set the nodes list"
   [nb-nodes]
+  (log [nb-nodes])
   (let [new-force (make-force)
-        nodes (array)]
-    (doseq [i (range 0 nb-nodes)]
-      (.push nodes #js {}))
+        nodes (if-not (nil? @force)
+                (.nodes @force)
+                (array))
+        nodes (update-nodes-array nodes nb-nodes)]
+    (log [nodes])
     (.nodes new-force nodes)
     (reset! force new-force)
     (start)))

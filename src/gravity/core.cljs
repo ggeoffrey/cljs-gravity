@@ -3,7 +3,8 @@
             [gravity.view.tools :as tools]
             [gravity.events :as events]
             [gravity.force.proxy :as worker]
-            [gravity.tools :refer [log]])
+            [gravity.tools :refer [log]]
+            [gravity.demo :as demo])
   (:require-macros [gravity.macros :refer [λ]]))
 
 (enable-console-print!)
@@ -30,6 +31,7 @@
 
 (defn bind-dev-events
   [graph]
+
   (let [{on :on
          canvas :canvas} graph]
     (on "nodeover" (λ [node]
@@ -37,7 +39,18 @@
     (on "nodeblur" (λ []
                       (set! (-> canvas .-style .-cursor) "inherit")))
     (on "nodeselect" (λ [node]
-                        (log [:select (.-name node) node])))))
+                        (log [:select (.-name node) node])))
+    (on "ready" (λ []
+                   (let [set-nodes (:nodes graph)
+                         set-links (:links graph)
+                         update-force (:updateForce graph)
+                         data (demo/get-demo-graph)
+                         nodes (-> data .-nodes)
+                         links (-> data .-links)]
+                     (set-nodes nodes)
+                     (set-links links)
+                     (update-force)
+                     )))))
 
 
 (defn unbind-old-events
@@ -115,6 +128,7 @@
 
     (clj->js
      (on-js-reload))))
+
 
 
 

@@ -5,8 +5,7 @@
    [gravity.view.nodeset :as points]
    [gravity.view.tools :as tools]
    [gravity.view.events :as events]
-   [gravity.force.proxy :as worker]
-   [gravity.demo :as demo])
+   [gravity.force.proxy :as worker])
   (:require-macros [gravity.macros :refer [λ]]))
 
 
@@ -240,7 +239,8 @@
     (when (and (not first-run) dev-mode)
       (tools/fill-window! canvas)
       (.removeEventListener canvas "mousemove")
-      (.removeEventListener canvas "click"))
+      (.removeEventListener canvas "click")
+      (events/notify-user-ready chan))
 
 
 

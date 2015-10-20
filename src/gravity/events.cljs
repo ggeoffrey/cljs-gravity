@@ -101,7 +101,7 @@
      (while true
        (let [event (<! chan)]
          (case (:type event)
-           :ready (trigger-ready store)
+           "ready" (trigger-ready store)
            :mouse-in-node (trigger-nodeover event state store)
            :mouse-out-node (trigger-nodeblur event state store)
            :select-node (trigger-select-node event state store)
