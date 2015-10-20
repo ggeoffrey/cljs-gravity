@@ -1,6 +1,6 @@
 (ns gravity.view.nodeset
   (:refer-clojure :exclude [update])
-  (:require [gravity.tools :as t]
+  (:require [gravity.tools :refer [log]]
             [gravity.view.node :as node])
   (:require-macros [gravity.macros :refer [λ]]))
 
@@ -42,7 +42,7 @@
      :meshes (clj->js (mapv last pairs))}))
 
 
-(defn update
+(defn update-geometry
   "Update a nodeset Points geometry or a LineSegments geometry"
   [geom-based-item]
   (set! (.-verticesNeedUpdate (.-geometry geom-based-item)) true)
@@ -77,66 +77,3 @@
 (def get-unique-color
   (memoize get-color))
 
-
-;; (declare get-vertex-shader)
-;; (declare get-frag-shader)
-
-
-;; (defn- get-shader-material
-;;   "Generate a shader material for a sprite"
-;;   [url]
-;;   (let [texture (.loadTexture js/THREE.ImageUtils url)
-;;         material-params (clj->js {:uniforms { :texture {:type "t"
-;;                                                         :value texture}
-;;                                               :color {:type "c"
-;;                                                       :value (new js/THREE.Color 0xff0000)}}
-;;                                   :vertexShader (get-vertex-shader)
-;;                                   :fragmentShader (get-frag-shader)
-;;                                   :blending js/THREE.AdditiveBlending})
-;;         material (new js/THREE.ShaderMaterial material-params)]
-;;     material))
-
-
-
-
-;; (defn- get-vertex-shader
-;;   []
-;;   "
-;;   /**
-;;   * Multiply each vertex by the
-;;   * model-view matrix and the
-;;   * projection matrix (both provided
-;;   * by Three.js) to get a final
-;;   * vertex position
-;;   */
-
-;;   uniform vec3 color;
-;;   uniform sampler2D texture;
-
-;;   void main() {
-;;   vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
-;;   gl_PointSize = 5.0 * (1.0+ 300.0 / length( mvPosition.xyz ) );
-;;   gl_Position = projectionMatrix *
-;;   modelViewMatrix *
-;;   vec4(position,1.0);
-;;   }
-
-;;   ")
-
-;; (defn get-frag-shader
-;;   []
-;;   "
-
-;;   uniform vec3 color;
-;;   uniform sampler2D texture;
-
-;;   vec4 vColor;
-
-;;   void main() {
-;;   //vColor = vec4( color, 0.0 );
-
-;;   //if(vColor.a < 0.5 ) discard;
-
-;;   gl_FragColor =  texture2D( texture, gl_PointCoord );
-;;   }
-;;   ")

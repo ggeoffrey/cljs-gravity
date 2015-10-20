@@ -28,6 +28,8 @@
         height (.-height (:canvas user-map))
         camera (new js/THREE.PerspectiveCamera 75 (/ width height) 0.1 100000 )]
 
+
+
     {	:scene (new js/THREE.Scene)
       :width width
       :height height
@@ -38,7 +40,9 @@
                                                  :canvas (:canvas user-map)})
       :raycaster (new THREE.Raycaster)
       :classifier (:color user-map)
-      :force-worker (worker/create "force-worker/worker.js" (:force user-map))
+      :force-worker (if (:force-worker user-map)
+                      (:force-worker user-map)
+                      (worker/create "force-worker/worker.js" (:force user-map)))
 
       :state (atom {:should-run true})
       :first-run (:first-run user-map)}))
@@ -82,7 +86,6 @@
 
 
 
-
 (defn- stop-callback!
   "Return a closure affecting the application state atom"
   [state]
@@ -99,15 +102,79 @@
 
 
 
+(defn- set-links
+  "Remove the old links and add the new ones"
+  [state scene links]
+  (let [old-links (:links-set @state)
+        nodes (:nodes @state)
+        new-links (points/create-links nodes links)]
+    (.remove scene old-links)
+    (.add scene new-links)
+    (swap! state assoc :links links)
+    (swap! state assoc :links-set new-links)
+    links))
+
+(defn- set-nodes
+  "Remove the old nodes and add the new ones"
+  [state scene nodes]
+  (let [classifier (:classifier @state)
+        old-nodes (:nodes @state)
+        {nodes :nodes
+         meshes :meshes} (points/prepare-nodes nodes classifier)]
+    (doseq [old old-nodes]
+      (.remove scene (-> old .-mesh)))
+    (doseq [new-node meshes]
+      (.add scene new-node))
+    (swap! state assoc :nodes nodes)
+    (swap! state assoc :meshes meshes)
+    (set-links state scene [])
+    nodes))
+
+
+
+(defn- set-nodes-callback
+  "Allow the user to replace nodes with a new set of nodes"
+  [state scene]
+  (λ [nodes]
+     (if (nil? nodes)
+       (:nodes @state)
+       (set-nodes state scene nodes))))
+
+(defn- set-links-callback
+  [state scene]
+  (λ [links]
+     (if (nil? links)
+       (:links @state)
+       (set-links state scene links))))
 
 
 
 
+(defn- update-force-callback
+  [state force-worker]
+  (λ []
+     (let [nodes (:nodes @state)
+           links (:links @state)]
+       (worker/send force-worker "set-nodes" (count nodes))
+       (worker/send force-worker "set-links" links)
+       ;;(worker/send force-worker "start")
+       )))
 
 
 ;; USE ALL THE ABOVE
 
 
+(defn init-force
+  [force-worker  nodes links dev-mode first-run]
+  ;; IF the app run for the first time in dev mode
+  ;; OR in classic -not dev- mode
+  (when (or (not dev-mode) first-run)
+    (worker/send force-worker "set-nodes" (count nodes))
+    (worker/send force-worker "set-links" links)
+    ;(worker/send force-worker "start")
+    )
+  (when (and (not first-run) dev-mode)
+      (worker/send force-worker "tick")))
 
 
 (defn create
@@ -140,6 +207,13 @@
         render (render-callback renderer scene camera stats state)]
 
 
+    (swap! state assoc :nodes nodes)
+    (swap! state assoc :meshes meshes)
+    (swap! state assoc :links links)
+    (swap! state assoc :links-set links-set)
+    (swap! state assoc :classifier classifier)
+
+
     ;; renderer
     (.setSize renderer width height)
     (.setClearColor renderer 0x000000)
@@ -158,26 +232,22 @@
                                          type (.-type message)
                                          data (.-data message)]
                                      (case type
-                                       "nodes-positions" (do (points/update-positions! nodes data)
+                                       "ready" (init-force force-worker nodes links dev-mode first-run)
+                                       "nodes-positions" (let [state @state]
+                                                           (points/update-positions! (:nodes state) data)
                                                            ;;(points/update nodeset)
-                                                           (points/update links-set))))))
+                                                           (points/update-geometry (:links-set state))
+                                                           )))))
 
 
 
-    ;; IF the app run for the first time in dev mode
-    ;; OR in classic -not dev- mode
-    (when (or (not dev-mode) first-run)
-        (worker/send force-worker "set-nodes" (count nodes))
-        (worker/send force-worker "set-links" links)
-        (worker/send force-worker "start")
-      )
 
     ;; if it's not the first time in dev mode
     (when (and (not first-run) dev-mode)
       (tools/fill-window! canvas)
       (.removeEventListener canvas "mousemove")
-      (.removeEventListener canvas "click")
-      (worker/send force-worker "tick"))
+      (.removeEventListener canvas "click"))
+
 
 
 
@@ -192,8 +262,8 @@
     (.add scene links-set)
 
 
-    (.addEventListener canvas "mousemove" (events/onDocMouseMove canvas camera raycaster meshes chan))
-    (.addEventListener canvas "click" (events/on-click canvas camera raycaster meshes chan))
+    (.addEventListener canvas "mousemove" (events/onDocMouseMove canvas camera raycaster state chan))
+    (.addEventListener canvas "click" (events/on-click canvas camera raycaster state chan))
     (.addEventListener js/window "resize" (events/onWindowResize canvas renderer camera))
 
     (let [webgl-params (:webgl user-map)]
@@ -211,8 +281,13 @@
     {:start (start-callback! state render)
      :stop (stop-callback! state)
      :resume (resume-force-callback force-worker)
+     :tick (λ [] (worker/send force-worker "tick"))
      :canvas (.-domElement renderer)
-     :stats stats}))
+     :stats stats
+     :nodes (set-nodes-callback state scene)
+     :links (set-links-callback state scene)
+     :updateForce (update-force-callback state force-worker)
+     }))
 
 
 

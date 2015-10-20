@@ -39,10 +39,11 @@
 
 (defn onDocMouseMove
   "Callback for the mouseMove event on the canvas node"
-  [canvas camera raycaster colliders chan]
+  [canvas camera raycaster state chan]
   (λ [event]
      (.preventDefault event)
-     (let [target (get-target event canvas camera raycaster colliders)]
+     (let [colliders (:meshes @state)
+           target (get-target event canvas camera raycaster colliders)]
        (if-not (nil? target)
          (let [node (.-node (.-object target))]
            (go (>! chan {:type :mouse-in-node
@@ -54,10 +55,11 @@
 
 (defn on-click
   "Callback for the click event"
-  [canvas camera raycaster colliders chan]
+  [canvas camera raycaster state chan]
   (λ [event]
      (.preventDefault event)
-     (let [target (get-target event canvas camera raycaster colliders)]
+     (let [colliders (:meshes @state)
+           target (get-target event canvas camera raycaster colliders)]
        (when-not (nil? target)
          (let [node (.-node (.-object target))]
            (go (>! chan {:type :select-node
@@ -78,24 +80,3 @@
      false))
 
 
-
-
-
-;;  private onWindowResize(){
-
-;;             var newWidth = this.renderer.domElement.parentElement.offsetWidth;
-;;             var newHeight = this.renderer.domElement.parentElement.offsetHeight;
-
-;;             this.canvas.width = newWidth;
-;;             this.canvas.height = newHeight;
-;;             this.canvas.style.width = newWidth + "px";
-;;             this.canvas.style.height = newHeight + "px";
-
-
-;;             var camera = <THREE.PerspectiveCamera> this.camera;
-;;             camera.aspect = newWidth/ newHeight;
-;;             camera.updateProjectionMatrix();
-
-
-;;             this.renderer.setSize( newWidth, newHeight);
-;;         }

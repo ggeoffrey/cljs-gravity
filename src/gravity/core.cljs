@@ -111,6 +111,7 @@
         params (init-parameters user-map)
         state (merge dev-app-state user-map params)]
     (reset! app-state state)
+    (swap! app-state assoc :force-worker (worker/create "force-worker/worker.js" (:force state)))
 
     (clj->js
      (on-js-reload))))

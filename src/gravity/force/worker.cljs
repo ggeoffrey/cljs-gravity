@@ -1,5 +1,5 @@
 (when-not (undefined? js/self.importScripts)
-	(.importScripts js/self "../libs/d3.min.js" "../libs/d3.layout.force3d.js"))
+	(.importScripts js/self "../libs/d3.js" "../libs/d3.layout.force3d.js"))
 
 ;;---------------------------------
 
@@ -43,6 +43,7 @@
 
 
 (def force (atom nil))
+(def parameters (atom nil))
 
 ;; --------------------------------
 
@@ -51,28 +52,26 @@
 
 (defn tick
   "Tick function for the force layout"
-  ([]
-   (tick nil))
-  ([_]
+  [_]
+  (let [nodes (.nodes @force)
+        size (.-length nodes)]
+    ;;(log [(first nodes)])
+    (when (> size 0)
+      (let [arr (new js/Float32Array (* size 3))
+            buffer (.-buffer arr)]
+        (loop [i 0]
+          (let [j (* i 3)
+                node (aget nodes i)]
+            (aset arr j (.-x node))
+            (aset arr (+ j 1) (.-y node))
+            (if (js/isNaN (.-z node))
+              (aset arr (+ j 2) 0)
+              (aset arr (+ j 2) (.-z node))))
+          (when (< i (dec size))
+            (recur (inc i))))
 
-   (let [nodes (.nodes @force)
-         size (dec (.-length nodes))]
-     (when (> size 0)
-       (let [arr (new js/Float32Array (* size 3))
-             buffer (.-buffer arr)]
-         (loop [i 0]
-           (let [j (* i 3)
-                 node (aget nodes i)]
-             (aset arr j (.-x node))
-             (aset arr (+ j 1) (.-y node))
-             (if (js/isNaN (.-z node))
-               (aset arr (+ j 2) 0)
-               (aset arr (+ j 2) (.-z node))))
-           (when (< i size)
-             (recur (inc i))))
+        (answer {:type "nodes-positions" :data arr} [buffer])))))
 
-         (answer {:type "nodes-positions" :data arr} [buffer])))))
-   )
 
 
 
@@ -84,11 +83,16 @@
 
 (defn init
   [params]
-  (log [params])
-  (let [size (-> params .-size)
-        params (js->clj params :keywordize-keys true)
+  (let [params (js->clj params :keywordize-keys true)]
+    (reset! parameters params)
+    (answer {:type :ready})
+    nil))
+
+(defn make-force
+  []
+  (let [params @parameters
         force-instance (-> (.force js/d3.layout)
-                           (.size size)
+                           (.size (clj->js (:size params)))
                            (.linkStrength (:linkStrength params))
                            (.friction (:friction params))
                            (.linkDistance (:linkDistance params))
@@ -98,38 +102,45 @@
                            (.alpha (:alpha params))
                            )]
     (.on force-instance "tick" tick)
-    (reset! force force-instance)))
+    force-instance))
 
 (defn start
   "start the force"
   []
-  (log "starting force")
-  (.start @force))
+  (when-not (nil? @force)
+    (.start @force)))
 
 (defn stop
   "Stop the force"
   []
-  (.stop @force))
+  (when-not (nil? @force)
+    (.stop @force)))
 
 (defn resume
   "Resume the force"
   []
-  (.resume @force))
+  (when-not (nil? @force)
+    (.resume @force)))
 
 (defn set-nodes
   "Set the nodes list"
   [nb-nodes]
-  (let [nodes (array)]
-    (loop [i 0]
-      (.push nodes (js-obj))
-      (when (< i nb-nodes)
-        (recur (inc i))))
-    (.nodes @force nodes)))
+  (let [new-force (make-force)
+        nodes (array)]
+    (doseq [i (range 0 nb-nodes)]
+      (.push nodes #js {}))
+    (.nodes new-force nodes)
+    (reset! force new-force)
+    (start)))
+
 
 (defn set-links
   "Set the links list"
   [links]
-  (.links @force links))
+  (stop)
+  (when-not (nil? @force)
+    (.links @force links)
+    (start)))
 
 
 (defn precompute
@@ -168,7 +179,7 @@
       "start" (start)
       "stop"  (stop)
       "resume" (resume)
-      "tick" (tick)
+      "tick" (tick nil)
       "set-nodes" (set-nodes data)
       "set-links" (set-links data)
       "precompute" (precompute data)
