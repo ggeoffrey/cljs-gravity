@@ -106,7 +106,7 @@
 
 
 (defn- update-nodes-array
-  "Add or remove the good amount of nodes and keep their positions"
+  "Add or remove the correct amount of nodes and keep their positions"
   [current-array nb-nodes]
   (let [size (count current-array)]
     (if (= size nb-nodes)
@@ -145,13 +145,11 @@
 (defn set-nodes
   "Set the nodes list"
   [nb-nodes]
-  (log [nb-nodes])
   (let [new-force (make-force)
         nodes (if-not (nil? @force)
                 (.nodes @force)
                 (array))
         nodes (update-nodes-array nodes nb-nodes)]
-    (log [nodes])
     (.nodes new-force nodes)
     (reset! force new-force)
     (start)))

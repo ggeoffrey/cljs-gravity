@@ -14,25 +14,26 @@
   "Cast a ray to intersect objects under the mouse pointer.
   Return the first intersected or nil"
   [event canvas camera raycaster objects]
-  (let [mouse-pos (new js/THREE.Vector3)
-        bounding-rect (.getBoundingClientRect canvas)
-        x (-> (.-clientX event)
-              (- (.-left bounding-rect))
-              (/ (.-offsetWidth canvas))
-              (* 2)
-              (- 1))
-        y (-> (.-clientY event)
-              (- (.-top bounding-rect))
-              (/ (.-offsetHeight canvas))
-              (-)
-              (* 2)
-              (+ 1))
-        cam-position (.-position camera)]
-    (.set mouse-pos x y 1)
-    (.unproject mouse-pos camera)
-    (.set raycaster cam-position (.normalize (.sub mouse-pos cam-position)))
-    ;;return
-    (first (.intersectObjects raycaster objects))))
+  (when-not (or (nil? objects) (empty? objects))
+    (let [mouse-pos (new js/THREE.Vector3)
+          bounding-rect (.getBoundingClientRect canvas)
+          x (-> (.-clientX event)
+                (- (.-left bounding-rect))
+                (/ (.-offsetWidth canvas))
+                (* 2)
+                (- 1))
+          y (-> (.-clientY event)
+                (- (.-top bounding-rect))
+                (/ (.-offsetHeight canvas))
+                (-)
+                (* 2)
+                (+ 1))
+          cam-position (.-position camera)]
+      (.set mouse-pos x y 1)
+      (.unproject mouse-pos camera)
+      (.set raycaster cam-position (.normalize (.sub mouse-pos cam-position)))
+      ;;return
+      (first (.intersectObjects raycaster objects)))))
 
 
 
