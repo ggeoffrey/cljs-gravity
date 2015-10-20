@@ -51,6 +51,16 @@
     (apply callback args)))
 
 
+
+(defn- trigger-ready
+  [store]
+  (let [store (get-callbacks store)
+        callback (:ready store)]
+    (when-not (nil? callback)
+      (trigger callback))))
+
+
+
 (defn- trigger-nodeover
   "If the mouse hovered a node"
   [event state store]
@@ -91,6 +101,7 @@
      (while true
        (let [event (<! chan)]
          (case (:type event)
+           "ready" (trigger-ready store)
            :mouse-in-node (trigger-nodeover event state store)
            :mouse-out-node (trigger-nodeblur event state store)
            :select-node (trigger-select-node event state store)

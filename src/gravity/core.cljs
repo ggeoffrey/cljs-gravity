@@ -3,7 +3,8 @@
             [gravity.view.tools :as tools]
             [gravity.events :as events]
             [gravity.force.proxy :as worker]
-            [gravity.tools :refer [log]])
+            [gravity.tools :refer [log]]
+            [gravity.demo :as demo])
   (:require-macros [gravity.macros :refer [λ]]))
 
 (enable-console-print!)
@@ -14,7 +15,7 @@
 
 (def default-parameters {:color (.category10 js/d3.scale)
                          :force {:size [1 1]
-                                 :linkStrength 0.1
+                                 :linkStrength 1
                                  :friction 0.9
                                  :linkDistance 20
                                  :charge -30
@@ -30,6 +31,7 @@
 
 (defn bind-dev-events
   [graph]
+
   (let [{on :on
          canvas :canvas} graph]
     (on "nodeover" (λ [node]
@@ -37,7 +39,18 @@
     (on "nodeblur" (λ []
                       (set! (-> canvas .-style .-cursor) "inherit")))
     (on "nodeselect" (λ [node]
-                        (log [:select (.-name node) node])))))
+                        (log [:select (.-name node) node])))
+    (on "ready" (λ []
+                   (let [set-nodes (:nodes graph)
+                         set-links (:links graph)
+                         update-force (:updateForce graph)
+                         data (demo/get-demo-graph)
+                         nodes (-> data .-nodes)
+                         links (-> data .-links)]
+                     (set-nodes nodes)
+                     (set-links links)
+                     (update-force)
+                     )))))
 
 
 (defn unbind-old-events
@@ -73,7 +86,7 @@
 
    (let [chan (events/create-chan)
          store (events/create-store)
-         graph (graph/create user-map chan dev-mode)
+         graph (graph/create user-map chan dev-mode)  ;; <--
          graph (merge graph store)]
      (events/listen chan store)
      (bind-dev-events graph)
@@ -105,16 +118,17 @@
   "Set some params to use live-reload in dev mode"
   [user-map]
   (let [user-map (js->clj user-map :keywordize-keys true)
-        dev-app-state {:force-worker (worker/create "force-worker/worker.js")
-                       :stats (tools/make-stats)
+        dev-app-state {:stats (tools/make-stats)
                        :last-instance {}
                        :first-run true}
         params (init-parameters user-map)
         state (merge dev-app-state user-map params)]
     (reset! app-state state)
+    (swap! app-state assoc :force-worker (worker/create "force-worker/worker.js" (:force state)))
 
     (clj->js
      (on-js-reload))))
+
 
 
 

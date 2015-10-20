@@ -12,7 +12,7 @@
 
         <script src="libs/three.min.js"></script>
         <script src="libs/OrbitControls.js"></script>
-        <script src="libs/d3.min.js"></script>
+        <script src="libs/d3.js"></script>
         <script src="libs/stats.min.js"></script>
 
         <script src="js/compiled/gravity.js" type="text/javascript"></script>
@@ -21,8 +21,25 @@
             function start () {
                 var canvas = document.getElementById('target');
                 var gg = gravity.core.init_dev_mode({
-                    canvas: canvas
+                    canvas: canvas,
+//                     color : d3.scale.category10(),
+//                     webgl: {
+//                         background: true,
+//                         lights: true,
+//                         shadows : true,
+//                         antialias : true
+//                     },
+//                     force : {
+//                         //charge : -100,
+//                     }
                 });
+
+//                 gg.on("ready", function(){
+//                     var graph = gravity.demo.get_demo_graph();
+//                     gg.nodes(graph.nodes);
+//                     gg.links(graph.links);
+//                     //gg.updateForce();
+//                 });
 
                 document.body.appendChild(gg.stats.domElement);
                 window.gg = gg;
