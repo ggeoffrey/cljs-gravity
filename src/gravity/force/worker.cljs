@@ -39,7 +39,9 @@
   (let [arr (clj->js args)]
     (.join arr "")))
 
-
+(defn eval
+  [value]
+  (js/eval value))
 
 
 (def force (atom nil))
@@ -204,8 +206,28 @@
       "set-nodes" (set-nodes data)
       "set-links" (set-links data)
       "precompute" (precompute data)
+
+      ;set params
+      "size" (swap! parameters assoc :size (js->clj data))
+      "linkStrength" (swap! parameters assoc :linkStrength (eval data))
+      "friction" (swap! parameters assoc :friction data)
+      "linkDistance" (swap! parameters assoc :linkDistance (eval data))
+      "charge" (swap! parameters assoc :charge (eval data))
+      "gravity" (swap! parameters assoc :gravity data)
+      "theta" (swap! parameters assoc :theta data)
+      "alpha" (swap! parameters assoc :alpha data)
+
       (warn (str "Unable to dispatch '" type "'")))))
 
+
+;; :size [1 1]
+;; :linkStrength 1
+;; :friction 0.9
+;; :linkDistance 20
+;; :charge -30
+;; :gravity 0.1
+;; :theta 0.8
+;; :alpha 0.1
 
 
 

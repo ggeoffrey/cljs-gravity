@@ -1,5 +1,5 @@
 (ns gravity.force.proxy
-	(:require [gravity.tools]))
+	(:require [gravity.tools :refer [log]]))
 
 
 (defn send
@@ -27,3 +27,7 @@
   (.addEventListener worker "message" callback))
 
 
+(defn serialize
+  "Serialize a value (number, function, etc…) to be evaluated by another thread"
+  [value]
+  (str "(" (.toString value) ")"))

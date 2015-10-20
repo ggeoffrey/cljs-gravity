@@ -281,6 +281,16 @@
      :nodes (set-nodes-callback state scene)
      :links (set-links-callback state scene)
      :updateForce (update-force-callback state force-worker)
+
+     :force {:size           (λ [array] (worker/send force-worker "size" array))
+             :linkStrength   (λ [val] (worker/send force-worker "linkStrength" (worker/serialize val)))
+             :friction       (λ [val] (worker/send force-worker "friction" val))
+             :linkDistance   (λ [val] (worker/send force-worker "linkDistance" (worker/serialize val)))
+             :charge         (λ [val] (worker/send force-worker "charge" (worker/serialize val)))
+             :gravity        (λ [val] (worker/send force-worker "gravity" val))
+             :theta          (λ [val] (worker/send force-worker "theta" val))
+             :alpha          (λ [val] (worker/send force-worker "alpha" val))
+             }
      }))
 
 
