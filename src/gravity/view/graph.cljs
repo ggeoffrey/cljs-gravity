@@ -165,16 +165,9 @@
 
 
 (defn init-force
-  [force-worker  nodes links dev-mode first-run]
-  ;; IF the app run for the first time in dev mode
-  ;; OR in classic -not dev- mode
-  (when (or (not dev-mode) first-run)
-    (worker/send force-worker "set-nodes" (count nodes))
-    (worker/send force-worker "set-links" links)
-    ;(worker/send force-worker "start")
-    )
+  [force-worker dev-mode first-run]
   (when (and (not first-run) dev-mode)
-      (worker/send force-worker "tick")))
+    (worker/send force-worker "tick")))
 
 
 (defn create
@@ -196,21 +189,20 @@
         canvas (if-not (nil? (:canvas user-map))
                  (:canvas user-map)
                  (.-domElement renderer))
-        data-test (demo/get-demo-graph)
-        ;gen-nodes (clj->js (mapv #(js-obj) (range 0 1000)))
-        {nodes :nodes
-         meshes :meshes} (points/prepare-nodes (.-nodes data-test) classifier)
+        ;;data-test (demo/get-demo-graph)
+        ;;{nodes :nodes
+        ;; meshes :meshes} (points/prepare-nodes (.-nodes data-test) classifier)
 
-        links (.-links data-test)
+        ;;links (.-links data-test)
         ;;nodeset (points/create nodes classifier)
-        links-set (points/create-links nodes links)
+        ;;links-set (points/create-links nodes links)
         render (render-callback renderer scene camera stats state)]
 
 
-    (swap! state assoc :nodes nodes)
-    (swap! state assoc :meshes meshes)
-    (swap! state assoc :links links)
-    (swap! state assoc :links-set links-set)
+;;     (swap! state assoc :nodes nodes)
+;;     (swap! state assoc :meshes meshes)
+;;     (swap! state assoc :links links)
+;;     (swap! state assoc :links-set links-set)
     (swap! state assoc :classifier classifier)
 
 
@@ -232,7 +224,9 @@
                                          type (.-type message)
                                          data (.-data message)]
                                      (case type
-                                       "ready" (init-force force-worker nodes links dev-mode first-run)
+                                       "ready" (do
+                                                 (init-force force-worker dev-mode first-run)
+                                                 (events/notify-user-ready chan))
                                        "nodes-positions" (let [state @state]
                                                            (points/update-positions! (:nodes state) data)
                                                            ;;(points/update nodeset)
@@ -255,11 +249,11 @@
     ;(worker/send force-worker "precompute" 50)
 
     ;; adding nodes
-    (doseq [item meshes]
-      (.add scene item))
+    ;;(doseq [item meshes]
+    ;;  (.add scene item))
 
     ;; adding links
-    (.add scene links-set)
+    ;;(.add scene links-set)
 
 
     (.addEventListener canvas "mousemove" (events/onDocMouseMove canvas camera raycaster state chan))

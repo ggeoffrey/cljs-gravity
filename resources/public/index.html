@@ -34,6 +34,13 @@
 //                     }
                 });
 
+                gg.on("ready", function(){
+                    var graph = gravity.demo.get_demo_graph();
+                    gg.nodes(graph.nodes);
+                    gg.links(graph.links);
+                    //gg.updateForce();
+                });
+
                 document.body.appendChild(gg.stats.domElement);
                 window.gg = gg;
 

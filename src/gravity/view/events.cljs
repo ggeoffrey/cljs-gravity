@@ -80,3 +80,7 @@
      false))
 
 
+(defn notify-user-ready
+  [chan]
+  (go (>! chan {:type :ready})))
+
