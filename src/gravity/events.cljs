@@ -45,72 +45,23 @@
   (let [deref-callbacks (:get-callbacks store)]
     (deref-callbacks)))
 
-(defn- trigger
+
+
+(defn- call
   [callback & args]
   (when-not (nil? callback)
     (apply callback args)))
 
 
-
-(defn- trigger-ready
-  [store]
-  (let [store (get-callbacks store)
-        callback (:ready store)]
-    (when-not (nil? callback)
-      (trigger callback))))
-
-
-
-(defn- trigger-nodeover
-  "If the mouse hovered a node"
-  [event state store]
-  (let [store (get-callbacks store)
-        callback (:nodeover store)]
-    (when (nil? (:target @state))
-      (swap! state assoc :target (:target event))
-      (trigger callback (:target event)))))
-
-(defn- trigger-select-node
-  "If a node is selected"
-  [event state store]
-  (let [store (get-callbacks store)
-        callback (:nodeselect store)]
-    (swap! state assoc :selected (:target event))
-    (trigger callback (:target event))))
-
-
-(defn- trigger-click-node
-  "If the mouse click a node"
-  [event store]
-  (let [store (get-callbacks store)
-        callback (:nodeclick store)
-        node (:target event)]
-    (trigger callback node)))
-
-
-(defn- trigger-nodeblur
-  "If the mouse hovered a node, trigger call the callback"
-  [event state store]
-  (let [store (get-callbacks store)
-        callback (:nodeblur store)]
-    (when-not (nil? (:target @state))
-      (swap! state assoc :target nil)
-      (trigger callback))))
-
-
-
-(defn- trigger-no-params-event
+(defn- trigger
   "Trigger an event taking no arguments"
-  [callback-key store]
-  (let [store (get-callbacks store)
-        callback (callback-key store)]
-    (trigger callback)))
+  ([callback-key store]
+   (trigger callback-key store nil))
 
-
-
-(defn- trigger-void-click
-  [state store]
-  (trigger-no-params-event :voidclick store))
+  ([callback-key store object-to-pass]
+   (let [store (get-callbacks store)
+         callback (callback-key store)]
+     (call callback object-to-pass))))
 
 
 
@@ -125,14 +76,23 @@
   (let [state (atom {:target nil})]
     (go
      (while true
-       (let [event (<! chan-out)]
+       (let [event (<! chan-out)
+             node (:target event)]
          (case (:type event)
-           "ready" (trigger-ready store)
-           :mouse-in-node (trigger-nodeover event state store)
-           :mouse-out-node (trigger-nodeblur event state store)
-           :select-node (trigger-select-node event state store)
-           :node-click (trigger-click-node event store)
-           :voidclick (trigger-void-click state store)
+           :ready (trigger :ready store)
+           :node-over (do
+                            (swap! state assoc :target node)
+                            (trigger :node-over store node))
+           :node-blur (do
+                             (swap! state assoc :target nil)
+                             (trigger :node-blur store))
+           :node-select (do
+                          (swap! state assoc :selected node)
+                          (trigger :node-select store node))
+
+           :node-click (trigger :node-click store node)
+           :node-dbl-click (trigger :node-dbl-click store node)
+           :void-click (trigger :void-click store)
            nil)
          )))))
 

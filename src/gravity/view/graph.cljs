@@ -270,8 +270,8 @@
 
 
     (.addEventListener canvas "mousemove" (events/onDocMouseMove canvas camera raycaster state chan-out))
-    (.addEventListener canvas "mousedown" (events/on-click canvas camera raycaster state chan-out))
-    (.addEventListener canvas "dblclick" (events/on-db-click canvas camera raycaster state chan-out))
+    ;(.addEventListener canvas "click" (events/on-click canvas camera raycaster state chan-out))
+    (.addEventListener canvas "dblclick" (events/on-dbl-click canvas camera raycaster state chan-out))
     (.addEventListener js/window "resize" (events/onWindowResize canvas renderer camera))
 
     (let [webgl-params (:webgl user-map)]

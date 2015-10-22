@@ -50,10 +50,10 @@
            target (get-target event canvas camera raycaster colliders)]
        (if-not (nil? target)
          (let [node (.-node (.-object target))]
-           (go (>! chan {:type :mouse-in-node
+           (go (>! chan {:type :node-over
                          :target node})))
          ;else
-         (go (>! chan {:type :mouse-out-node}))))
+         (go (>! chan {:type :node-blur}))))
      false))
 
 
@@ -67,6 +67,25 @@
        (if-not (nil? target)
          (let [node (.-node (.-object target))]
            (go (>! chan {:type :node-click
+                         :target node})))
+         ;else
+         (do
+           ;(swap! state assoc :selected nil)
+           ;(go (>! chan {:type :voidclick})))
+           ))
+       false)))
+
+
+(defn on-dbl-click
+  "Callback for the click event"
+  [canvas camera raycaster state chan]
+  (λ [event]
+     (.preventDefault event)
+     (let [colliders (:meshes @state)
+           target (get-target event canvas camera raycaster colliders)]
+       (if-not (nil? target)
+         (let [node (.-node (.-object target))]
+           (go (>! chan {:type :node-dbl-click
                          :target node})))
          ;else
          (do
@@ -91,7 +110,7 @@
 
 (defn notify-user-ready
   [chan]
-  (go (>! chan {:type "ready"})))
+  (go (>! chan {:type :ready})))
 
 
 

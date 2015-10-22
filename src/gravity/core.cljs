@@ -34,19 +34,19 @@
 
   (let [{on :on
          canvas :canvas} graph]
-    (on "nodeover" (λ [node]
+    (on "node-over" (λ [node]
                       (set! (-> canvas .-style .-cursor) "pointer")))
-    (on "nodeblur" (λ []
+    (on "node-blur" (λ []
                       (set! (-> canvas .-style .-cursor) "inherit")))
-    (on "nodeselect" (λ [node]
+    (on "node-select" (λ [node]
                         (log [:select (.-name node) node])))
-    (on "voidclick" (λ []
+    (on "void-click" (λ []
                        (log [:void])))
-    (on "nodeclick" (λ [node]
+    (on "node-click" (λ [node]
+                       (log :click)
                        (set! (-> node .-selected) true)))
-    (on "nodedbclick" (λ [node]
-                         (let [pinned (-> node .-pinned)]
-                           (set! (-> node .-pinned) (not pinned)))))
+    (on "node-dbl-click" (λ [node]
+                         (log :dbl-click)))
     (on "ready" (λ []
                    (let [set-nodes (:nodes graph)
                          set-links (:links graph)
@@ -94,7 +94,9 @@
    (let [chan-out (events/create-chan)
          store (events/create-store)
          graph (graph/create user-map chan-out dev-mode)  ;; <--
-         graph (merge graph store)]
+         graph (-> graph
+                   (merge store)
+                   (dissoc :get-callbacks))]
      (events/listen-outgoing-events chan-out store)
      (bind-dev-events graph)
      graph)))
