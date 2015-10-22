@@ -185,7 +185,7 @@
 
 (defn create
   "Initialise a context in the specified element id"
-  [user-map chan-out chan-in dev-mode]
+  [user-map chan-out dev-mode]
   (let [{	first-run :first-run
           scene :scene
           width :width
@@ -271,6 +271,7 @@
 
     (.addEventListener canvas "mousemove" (events/onDocMouseMove canvas camera raycaster state chan-out))
     (.addEventListener canvas "mousedown" (events/on-click canvas camera raycaster state chan-out))
+    (.addEventListener canvas "dblclick" (events/on-db-click canvas camera raycaster state chan-out))
     (.addEventListener js/window "resize" (events/onWindowResize canvas renderer camera))
 
     (let [webgl-params (:webgl user-map)]
@@ -284,7 +285,6 @@
 
 
     (events/watch-state state :main-watcher)
-    (events/listen-incoming-events chan-in chan-out state)
 
 
     (render)

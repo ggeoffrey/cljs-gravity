@@ -81,14 +81,11 @@
 
 (defn- trigger-click-node
   "If the mouse click a node"
-  [event store chan-in]
+  [event store]
   (let [store (get-callbacks store)
         callback (:nodeclick store)
         node (:target event)]
-    (trigger callback node)
-    (if (-> node .-selected)
-      (go (>! chan-in {:type :node-select
-                       :target node})))))
+    (trigger callback node)))
 
 
 (defn- trigger-nodeblur
@@ -123,9 +120,8 @@
 ;; dispatcher
 
 (defn listen-outgoing-events
-  "Listen to an output chan and trigger the appropriate callbacks if found in the events-store.
-  If the callback did something that should be reported to the view, an event is posted to chan-in"
-  [chan-out chan-in store]
+  "Listen to an output chan and trigger the appropriate callbacks if found in the events-store."
+  [chan-out store]
   (let [state (atom {:target nil})]
     (go
      (while true
@@ -135,7 +131,7 @@
            :mouse-in-node (trigger-nodeover event state store)
            :mouse-out-node (trigger-nodeblur event state store)
            :select-node (trigger-select-node event state store)
-           :node-click (trigger-click-node event store chan-in)
+           :node-click (trigger-click-node event store)
            :voidclick (trigger-void-click state store)
            nil)
          )))))

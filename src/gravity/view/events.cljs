@@ -98,26 +98,6 @@
 
 
 
-
-
-
-
-(defn listen-incoming-events
-  [chan-in chan-out state]
-  (go
-   (while true
-     (let [event (<! chan-in)]
-       (case (:type event)
-         :node-select (do
-                        (swap! state assoc :selected (:target event))
-                        (go (>! chan-out {:type :select-node
-                                          :target (:target event)})))
-         )))))
-
-
-
-
-
   ;; State watch
 
 

@@ -92,11 +92,10 @@
   ([user-map dev-mode]
 
    (let [chan-out (events/create-chan)
-         chan-in (events/create-chan)
          store (events/create-store)
-         graph (graph/create user-map chan-out chan-in dev-mode)  ;; <--
+         graph (graph/create user-map chan-out dev-mode)  ;; <--
          graph (merge graph store)]
-     (events/listen-outgoing-events chan-out chan-in store)
+     (events/listen-outgoing-events chan-out store)
      (bind-dev-events graph)
      graph)))
 
