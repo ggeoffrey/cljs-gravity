@@ -11,7 +11,7 @@
 
 (defonce app-state (atom {}))
 
-
+(+ 1 2)
 
 (def default-parameters {:color (.category10 js/d3.scale)
                          :force {:size [1 1]
@@ -40,6 +40,13 @@
                       (set! (-> canvas .-style .-cursor) "inherit")))
     (on "nodeselect" (λ [node]
                         (log [:select (.-name node) node])))
+    (on "voidclick" (λ []
+                       (log [:void])))
+    (on "nodeclick" (λ [node]
+                       (set! (-> node .-selected) true)))
+    (on "nodedbclick" (λ [node]
+                         (let [pinned (-> node .-pinned)]
+                           (set! (-> node .-pinned) (not pinned)))))
     (on "ready" (λ []
                    (let [set-nodes (:nodes graph)
                          set-links (:links graph)
@@ -84,11 +91,12 @@
 
   ([user-map dev-mode]
 
-   (let [chan (events/create-chan)
+   (let [chan-out (events/create-chan)
+         chan-in (events/create-chan)
          store (events/create-store)
-         graph (graph/create user-map chan dev-mode)  ;; <--
+         graph (graph/create user-map chan-out chan-in dev-mode)  ;; <--
          graph (merge graph store)]
-     (events/listen chan store)
+     (events/listen-outgoing-events chan-out chan-in store)
      (bind-dev-events graph)
      graph)))
 

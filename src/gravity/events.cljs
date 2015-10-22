@@ -2,7 +2,7 @@
   (:require-macros
    [gravity.macros :refer [λ]]
    [cljs.core.async.macros :refer [go]])
-  (:require [cljs.core.async :refer [<! chan]]
+  (:require [cljs.core.async :refer [<! >! chan]]
             [gravity.tools :refer [log]]))
 
 
@@ -12,7 +12,7 @@
   - avoiding a :require into core
   - centralizing the creation"
   []
-  (chan 1024))
+  (chan 512))
 
 
 (defn create-store
@@ -71,11 +71,24 @@
       (trigger callback (:target event)))))
 
 (defn- trigger-select-node
-  "If the mouse click a node"
+  "If a node is selected"
   [event state store]
   (let [store (get-callbacks store)
         callback (:nodeselect store)]
+    (swap! state assoc :selected (:target event))
     (trigger callback (:target event))))
+
+
+(defn- trigger-click-node
+  "If the mouse click a node"
+  [event store chan-in]
+  (let [store (get-callbacks store)
+        callback (:nodeclick store)
+        node (:target event)]
+    (trigger callback node)
+    (if (-> node .-selected)
+      (go (>! chan-in {:type :node-select
+                       :target node})))))
 
 
 (defn- trigger-nodeblur
@@ -89,25 +102,43 @@
 
 
 
+(defn- trigger-no-params-event
+  "Trigger an event taking no arguments"
+  [callback-key store]
+  (let [store (get-callbacks store)
+        callback (callback-key store)]
+    (trigger callback)))
+
+
+
+(defn- trigger-void-click
+  [state store]
+  (trigger-no-params-event :voidclick store))
+
+
+
+
+
 
 ;; dispatcher
 
-(defn listen
-  "Listen to a chan and trigger the appropriate callbacks if found in the events-store"
-  [chan store]
-  (let [state (atom {:target nil
-                     :selected nil})]
+(defn listen-outgoing-events
+  "Listen to an output chan and trigger the appropriate callbacks if found in the events-store.
+  If the callback did something that should be reported to the view, an event is posted to chan-in"
+  [chan-out chan-in store]
+  (let [state (atom {:target nil})]
     (go
      (while true
-       (let [event (<! chan)]
+       (let [event (<! chan-out)]
          (case (:type event)
            "ready" (trigger-ready store)
            :mouse-in-node (trigger-nodeover event state store)
            :mouse-out-node (trigger-nodeblur event state store)
            :select-node (trigger-select-node event state store)
+           :node-click (trigger-click-node event store chan-in)
+           :voidclick (trigger-void-click state store)
            nil)
          )))))
-
 
 
 

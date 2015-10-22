@@ -10,6 +10,7 @@
 
 
 
+
 (defn- get-target
   "Cast a ray to intersect objects under the mouse pointer.
   Return the first intersected or nil"
@@ -38,6 +39,8 @@
 
 
 
+
+
 (defn onDocMouseMove
   "Callback for the mouseMove event on the canvas node"
   [canvas camera raycaster state chan]
@@ -61,11 +64,16 @@
      (.preventDefault event)
      (let [colliders (:meshes @state)
            target (get-target event canvas camera raycaster colliders)]
-       (when-not (nil? target)
+       (if-not (nil? target)
          (let [node (.-node (.-object target))]
-           (go (>! chan {:type :select-node
-                         :target node})))))
-     false))
+           (go (>! chan {:type :node-click
+                         :target node})))
+         ;else
+         (do
+           ;(swap! state assoc :selected nil)
+           ;(go (>! chan {:type :voidclick})))
+           ))
+       false)))
 
 
 (defn onWindowResize
@@ -85,3 +93,49 @@
   [chan]
   (go (>! chan {:type "ready"})))
 
+
+
+
+
+
+
+
+
+
+(defn listen-incoming-events
+  [chan-in chan-out state]
+  (go
+   (while true
+     (let [event (<! chan-in)]
+       (case (:type event)
+         :node-select (do
+                        (swap! state assoc :selected (:target event))
+                        (go (>! chan-out {:type :select-node
+                                          :target (:target event)})))
+         )))))
+
+
+
+
+
+  ;; State watch
+
+
+(defn put-select-circle-on-node
+  [old-state new-state]
+  (let [circle (:select-circle new-state)
+        old-node (:selected old-state)
+        new-node (:selected new-state)]
+    (when-not (nil? old-node)
+      (set! (-> old-node .-selected) false)
+      (.remove (-> old-node .-mesh) circle))
+    (when-not (nil? new-node)
+      (.add (-> new-node .-mesh) circle))))
+
+
+(defn watch-state
+  [state watch-id]
+  (add-watch state watch-id
+             (λ [id state old-state new-state]
+                (put-select-circle-on-node old-state new-state)
+                )))

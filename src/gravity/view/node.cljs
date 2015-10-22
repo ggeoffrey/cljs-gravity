@@ -61,5 +61,6 @@
     (set! (.-mesh node) collider)
     (set! (.-castShadow collider) true)
     (set! (.-node collider) node)
+    (set! (.-selected node) false)
     node))
 

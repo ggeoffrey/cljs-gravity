@@ -84,3 +84,32 @@
   (if-not spots
     (conj [] (get-flat-light))
     (get-spot-lights)))
+
+
+
+(defn get-selection-circle
+  "Return a circle meant to be placed and animated on a node."
+  ([]
+   (get-selection-circle 32 15))
+
+  ([nb-segments radius]
+   (let [material (new js/THREE.LineBasicMaterial #js {:color 0xff0000})
+         geometry (new js/THREE.Geometry)]
+     (doseq [i (range nb-segments)]
+       (let [theta (-> i
+                       (/ nb-segments)
+                       (* Math/PI)
+                       (* 2))
+             cos (-> (Math/cos theta)
+                     (* radius))
+             sin (-> (Math/sin theta)
+                     (* radius))
+             vect (new js/THREE.Vector3 cos sin 0)]
+         (.push (-> geometry .-vertices) vect)))
+     ;; close circle
+     (.push (-> geometry .-vertices) (aget (-> geometry .-vertices) 0))
+     ;ret
+     (new js/THREE.Line geometry material))))
+
+
+

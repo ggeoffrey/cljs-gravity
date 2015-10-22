@@ -58,13 +58,19 @@
 
 (defn- render-callback
   "Return a function rendering the context"
-  [renderer scene camera stats state]
+  [renderer scene camera stats state select-circle]
   (λ render []
      (when-not (nil? stats)
        (.begin stats))
 
      (if (get @state :should-run)
        (do
+         (when-not (nil? select-circle)
+           (let [x1 (-> select-circle .-rotation .-x)
+                 y1 (-> select-circle .-rotation .-y)
+                 x2 (+ x1 0.01)
+                 y2 (+ y1 0.1)]
+             (.set (-> select-circle .-rotation) x2 y2 0)))
          (.requestAnimationFrame js/window render)
          (.render renderer scene camera)))
 
@@ -79,8 +85,9 @@
   and triggering the render function once"
   [state render]
   (λ []
-     (swap! state assoc :should-run true)
-     (render)
+     (when-not (:should-run @state)
+       (swap! state assoc :should-run true)
+       (render))
      nil))
 
 
@@ -160,6 +167,13 @@
        )))
 
 
+
+
+
+
+
+
+
 ;; USE ALL THE ABOVE
 
 
@@ -171,7 +185,7 @@
 
 (defn create
   "Initialise a context in the specified element id"
-  [user-map chan dev-mode]
+  [user-map chan-out chan-in dev-mode]
   (let [{	first-run :first-run
           scene :scene
           width :width
@@ -188,6 +202,8 @@
         canvas (if-not (nil? (:canvas user-map))
                  (:canvas user-map)
                  (.-domElement renderer))
+
+        select-circle (tools/get-selection-circle)
         ;;data-test (demo/get-demo-graph)
         ;;{nodes :nodes
         ;; meshes :meshes} (points/prepare-nodes (.-nodes data-test) classifier)
@@ -195,7 +211,7 @@
         ;;links (.-links data-test)
         ;;nodeset (points/create nodes classifier)
         ;;links-set (points/create-links nodes links)
-        render (render-callback renderer scene camera stats state)]
+        render (render-callback renderer scene camera stats state select-circle)]
 
 
 ;;     (swap! state assoc :nodes nodes)
@@ -203,6 +219,7 @@
 ;;     (swap! state assoc :links links)
 ;;     (swap! state assoc :links-set links-set)
     (swap! state assoc :classifier classifier)
+    (swap! state assoc :select-circle select-circle)
 
 
     ;; renderer
@@ -225,7 +242,7 @@
                                      (case type
                                        "ready" (do
                                                  (init-force force-worker dev-mode first-run)
-                                                 (events/notify-user-ready chan))
+                                                 (events/notify-user-ready chan-out))
                                        "nodes-positions" (let [state @state]
                                                            (points/update-positions! (:nodes state) data)
                                                            ;;(points/update nodeset)
@@ -240,24 +257,20 @@
       (tools/fill-window! canvas)
       (.removeEventListener canvas "mousemove")
       (.removeEventListener canvas "click")
-      (events/notify-user-ready chan))
+      (events/notify-user-ready chan-out))
 
 
 
 
 
-    ;(worker/send force-worker "precompute" 50)
-
-    ;; adding nodes
-    ;;(doseq [item meshes]
-    ;;  (.add scene item))
-
-    ;; adding links
-    ;;(.add scene links-set)
+    ;;(worker/send force-worker "precompute" 50)
 
 
-    (.addEventListener canvas "mousemove" (events/onDocMouseMove canvas camera raycaster state chan))
-    (.addEventListener canvas "click" (events/on-click canvas camera raycaster state chan))
+    (.add scene select-circle)
+
+
+    (.addEventListener canvas "mousemove" (events/onDocMouseMove canvas camera raycaster state chan-out))
+    (.addEventListener canvas "mousedown" (events/on-click canvas camera raycaster state chan-out))
     (.addEventListener js/window "resize" (events/onWindowResize canvas renderer camera))
 
     (let [webgl-params (:webgl user-map)]
@@ -268,6 +281,10 @@
       ;; add lights
       (doseq [light (tools/get-lights (:lights webgl-params))]
         (.add scene light)))
+
+
+    (events/watch-state state :main-watcher)
+    (events/listen-incoming-events chan-in chan-out state)
 
 
     (render)
