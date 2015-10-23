@@ -113,3 +113,13 @@
 
 
 
+(defn get-intersect-plane
+  "Return a big plane filling the sphere. Used to drag nodes"
+  []
+  (let [side 4000
+        material (new js/THREE.MeshBasicMaterial #js {:wireframe true})
+        geometry (new js/THREE.PlaneGeometry side side 1 1)
+        mesh (new js/THREE.Mesh geometry material)]
+    mesh))
+
+

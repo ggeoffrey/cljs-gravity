@@ -43,8 +43,8 @@
     (on "void-click" (λ []
                        (log [:void])))
     (on "node-click" (λ [node]
-                       (log :click)
-                       (set! (-> node .-selected) true)))
+                        (let [select (:selectNode graph)]
+                          (select node))))
     (on "node-dbl-click" (λ [node]
                          (log :dbl-click)))
     (on "ready" (λ []

@@ -58,8 +58,11 @@
 
 (defn- render-callback
   "Return a function rendering the context"
-  [renderer scene camera stats state select-circle]
+  [renderer scene camera stats state controls select-circle]
   (λ render []
+
+     (.update controls)
+
      (when-not (nil? stats)
        (.begin stats))
 
@@ -204,6 +207,7 @@
                  (.-domElement renderer))
 
         select-circle (tools/get-selection-circle)
+        intersect-plane (tools/get-intersect-plane)
         ;;data-test (demo/get-demo-graph)
         ;;{nodes :nodes
         ;; meshes :meshes} (points/prepare-nodes (.-nodes data-test) classifier)
@@ -211,7 +215,7 @@
         ;;links (.-links data-test)
         ;;nodeset (points/create nodes classifier)
         ;;links-set (points/create-links nodes links)
-        render (render-callback renderer scene camera stats state select-circle)]
+        render (render-callback renderer scene camera stats state controls select-circle)]
 
 
 ;;     (swap! state assoc :nodes nodes)
@@ -267,6 +271,7 @@
 
 
     (.add scene select-circle)
+    (.add scene intersect-plane)
 
 
     ;(.addEventListener canvas "mousemove" (events/onDocMouseMove canvas camera raycaster state chan-out))
@@ -276,8 +281,9 @@
 
 
 
+    (let [mouse (events/listen-to-canvas canvas)]
+      (events/apply-events-to mouse canvas camera raycaster intersect-plane controls state chan-out))
 
-    (events/listen-to-canvas canvas)
 
 
 
@@ -317,6 +323,10 @@
              :theta          (λ [val] (worker/send force-worker "theta" val))
              :alpha          (λ [val] (worker/send force-worker "alpha" val))
              }
+
+     :selectNode (λ [node]
+                    (swap! state assoc :selected node)
+                    (:selected @state))
      }))
 
 
