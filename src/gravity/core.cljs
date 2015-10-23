@@ -35,19 +35,26 @@
   (let [{on :on
          canvas :canvas} graph]
     (on "node-over" (λ [node]
-                      (set! (-> canvas .-style .-cursor) "pointer")))
+                       (log :over)
+                       (set! (-> canvas .-style .-cursor) "pointer")))
     (on "node-blur" (λ []
-                      (set! (-> canvas .-style .-cursor) "inherit")))
+                       (log :blur)
+                       (set! (-> canvas .-style .-cursor) "inherit")))
     (on "node-select" (λ [node]
-                        (log [:select (.-name node) node])))
+                         (log :void)
+                         (log [:select (.-name node) node])))
     (on "void-click" (λ []
-                       (log [:void])))
+                        (log [:void])))
     (on "node-click" (λ [node]
                         (log :node-click)
                         (let [select (:selectNode graph)]
                           (select node))))
     (on "node-dbl-click" (λ [node]
-                         (log :dbl-click)))
+                            (log :dbl-click)
+                            (let [unpin (:unpinNode graph)
+                                  resume (:resume graph)]
+                              (unpin node)
+                              (resume))))
     (on "ready" (λ []
                    (let [set-nodes (:nodes graph)
                          set-links (:links graph)

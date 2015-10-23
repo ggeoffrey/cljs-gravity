@@ -76,7 +76,7 @@
            (>! chan {:type :node-over
                       :target node})))
       ;else
-      (when (= :node-over (:last @events-state))
+      (when true;;(= :node-over (:last @events-state))
         (set! (-> controls .-enabled) true)
         (go (>! chan {:type :node-blur})
             (swap! events-state assoc :last :blur))))))
@@ -85,6 +85,7 @@
 (defn- click
   "click event"
   [event canvas camera raycaster state chan]
+  (log "click")
   (let [colliders (:meshes @state)
         target (get-target event canvas camera raycaster colliders)]
     (when-not (nil? target)
@@ -164,7 +165,7 @@
   [mouse-down mouse-up mouse-move]
   (let [timeout-time 350
 
-        out-chan (chan (sliding-buffer 1))
+        out-chan (chan 10)
         events-state (atom {})]
     (go-loop []
              (loop []

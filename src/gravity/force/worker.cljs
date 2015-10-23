@@ -203,7 +203,7 @@
     (set! (.-x node) (.-x position))
     (set! (.-y node) (.-y position))
 
-    ;;(set! (.-fixed node) true)
+    (set! (.-fixed node) false)
 
     ;;(.tick @force)
     ))

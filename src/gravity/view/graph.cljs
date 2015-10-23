@@ -206,7 +206,7 @@
                  (:canvas user-map)
                  (.-domElement renderer))
 
-        select-circle (tools/get-selection-circle)
+        select-circle (tools/get-circle)
         intersect-plane (tools/get-intersect-plane)
         ;;data-test (demo/get-demo-graph)
         ;;{nodes :nodes
@@ -218,10 +218,10 @@
         render (render-callback renderer scene camera stats state controls select-circle)]
 
 
-;;     (swap! state assoc :nodes nodes)
-;;     (swap! state assoc :meshes meshes)
-;;     (swap! state assoc :links links)
-;;     (swap! state assoc :links-set links-set)
+    ;;     (swap! state assoc :nodes nodes)
+    ;;     (swap! state assoc :meshes meshes)
+    ;;     (swap! state assoc :links links)
+    ;;     (swap! state assoc :links-set links-set)
     (swap! state assoc :classifier classifier)
     (swap! state assoc :select-circle select-circle)
 
@@ -328,9 +328,14 @@
                     (swap! state assoc :selected node)
                     (:selected @state))
      :pinNode (λ [node]
+                 (let [circle (tools/get-circle)
+                       mesh (-> node .-mesh)]
+                   (set! (-> mesh .-circle) circle)
+                   (.add mesh circle))
                  (worker/send force-worker "pin" {:index (-> node .-index)}))
      :unpinNode (λ [node]
-                 (worker/send force-worker "unpin" {:index (-> node .-index)}))
+                   (.remove (-> node .-mesh) (-> node .-mesh .-circle))
+                   (worker/send force-worker "unpin" {:index (-> node .-index)}))
      }))
 
 

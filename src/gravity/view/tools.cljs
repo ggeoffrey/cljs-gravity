@@ -87,10 +87,10 @@
 
 
 
-(defn get-selection-circle
+(defn get-circle
   "Return a circle meant to be placed and animated on a node."
   ([]
-   (get-selection-circle 32 15))
+   (get-circle 32 15))
 
   ([nb-segments radius]
    (let [material (new js/THREE.LineBasicMaterial #js {:color 0xff0000})
@@ -110,6 +110,8 @@
      (.push (-> geometry .-vertices) (aget (-> geometry .-vertices) 0))
      ;ret
      (new js/THREE.Line geometry material))))
+
+
 
 
 
