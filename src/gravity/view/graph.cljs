@@ -269,10 +269,19 @@
     (.add scene select-circle)
 
 
-    (.addEventListener canvas "mousemove" (events/onDocMouseMove canvas camera raycaster state chan-out))
+    ;(.addEventListener canvas "mousemove" (events/onDocMouseMove canvas camera raycaster state chan-out))
     ;(.addEventListener canvas "click" (events/on-click canvas camera raycaster state chan-out))
-    (.addEventListener canvas "dblclick" (events/on-dbl-click canvas camera raycaster state chan-out))
+    ;(.addEventListener canvas "dblclick" (events/on-dbl-click canvas camera raycaster state chan-out))
     (.addEventListener js/window "resize" (events/onWindowResize canvas renderer camera))
+
+
+
+
+    (events/listen-to-canvas canvas)
+
+
+
+
 
     (let [webgl-params (:webgl user-map)]
       ;; add background

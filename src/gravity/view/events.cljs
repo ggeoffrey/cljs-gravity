@@ -3,9 +3,9 @@
   (:require
    [gravity.tools :refer [log]]
    [gravity.view.tools :as tools]
-   [cljs.core.async :refer [>!]])
+   [cljs.core.async :refer [chan >! <! put!  sliding-buffer]])
   (:require-macros [gravity.macros :refer [λ]]
-                   [cljs.core.async.macros :refer [go]]))
+                   [cljs.core.async.macros :refer [go go-loop alt!]]))
 
 
 
@@ -117,7 +117,93 @@
 
 
 
-  ;; State watch
+;; Events factory
+
+
+
+(defn- listen-to-mouse-events
+  "Take chans with events from the dom and alt! them to generate meaningful events."
+  [mouse-down mouse-up mouse-move]
+  (let [timeout-time 350
+
+        out-chan (chan 1)
+        events-state (atom {})]
+    (go-loop []
+             (loop []
+               (alt! [mouse-down] ([coords] (do
+                                              (swap! events-state assoc :event :down)
+                                              (go (>! out-chan {:type :down
+                                                                :coords coords}))
+                                              (js/setTimeout #(swap! events-state assoc :event nil) timeout-time)
+                                              nil))))
+             (loop [nb-drags 0]
+               (alt! [mouse-up] ([coords] (do
+
+
+
+                                            (go (>! out-chan {:type :up
+                                                              :coords coords}))
+
+                                            (when (= :down (:event @events-state))
+                                              ;; the last event was a :down -> we trigger a click
+                                              ;; if we already had a click before it's a double-click
+                                              (if (and
+                                                   (:last-was-a-click @events-state)
+                                                   (= coords (:last-coords @events-state)))
+                                                (go (log coords (:last-coords @events-state))
+                                                    (swap! events-state assoc :last-was-a-click false)
+                                                    (>! out-chan {:type :double-click
+                                                                  :coords coords}))
+                                                ;else it's a simple click
+                                                (go (swap! events-state assoc :last-was-a-click true)
+                                                    (>! out-chan {:type :click
+                                                                  :coords coords})
+                                                    (js/setTimeout #(swap! events-state assoc :last-was-a-click false) timeout-time))))
+
+                                            (swap! events-state assoc :event :up)
+                                            (swap! events-state assoc :last-coords coords)
+
+                                            nil))
+                     [mouse-move] ([coords]
+                                   (do
+                                     (when (> nb-drags 3)
+                                       (swap! events-state assoc :last-was-a-click false)
+                                       (swap! events-state assoc :event :drag)
+                                       (swap! events-state assoc :last-coords coords)
+                                       (go (>! out-chan {:type :drag
+                                                         :coords coords})))
+                                     (recur (inc nb-drags))))))
+             (recur))
+    out-chan
+    ))
+
+
+(defn listen-to-canvas
+  "Listen to a canvas and return a chan of events."
+  [canvas]
+  (let [transduct-mouse (map (λ [e] {:x (.-offsetX e) :y (.-offsetY e)}))
+        mousedown-chan (chan 1 transduct-mouse)
+        mouseup-chan (chan 1 transduct-mouse)
+        mousemove-chan (chan (sliding-buffer 1) transduct-mouse)]
+
+    (.addEventListener canvas "mousedown" #(put! mousedown-chan %))
+    (.addEventListener canvas "mousemove" #(put! mousemove-chan %))
+    (.addEventListener canvas "mouseup" #(put! mouseup-chan %))
+
+    (let [mouse (listen-to-mouse-events mousedown-chan mouseup-chan mousemove-chan)]
+      (go-loop []
+               (let [event (<! mouse)]
+                 (log event))
+               (recur))
+
+      nil)))
+
+
+
+
+
+
+;; State watch
 
 
 (defn put-select-circle-on-node
