@@ -33,9 +33,12 @@
   Return a map {nodes[] colliders[]} meant to be destructured.
   The nodes and the colliders are in the same order and share the same position Vector3."
   [nodes classifier]
-  (let [pairs (map (λ [node]
-                      (let [prepared-node (node/create node classifier)
+  (let [counter (atom 0)
+        pairs (map (λ [node]
+                      (let [index @counter
+                            prepared-node (node/create node classifier index)
                             mesh (.-mesh prepared-node)]
+                        (swap! counter inc)
                         [prepared-node mesh]))
                    nodes)]
     {:nodes (clj->js (mapv first pairs))

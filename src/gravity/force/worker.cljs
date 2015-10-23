@@ -187,6 +187,43 @@
 
 
 
+(defn set-position
+  "Set a node's position"
+  [data]
+  (let [index (-> data .-index)
+        position (-> data .-position)
+        node (aget (.nodes @force) index)
+        alpha (.alpha @force)]
+
+    ;;(stop)
+
+    (when-not (> alpha 0)
+      (.alpha @force 0.01))
+
+    (set! (.-x node) (.-x position))
+    (set! (.-y node) (.-y position))
+
+    ;;(set! (.-fixed node) true)
+
+    ;;(.tick @force)
+    ))
+
+
+(defn pin
+  "pin a node by index"
+  [data]
+  (let [index (-> data .-index)
+        node (aget (.nodes @force) index)]
+    (set! (.-fixed node) true)))
+
+
+(defn unpin
+  "unpin a node by index"
+  [data]
+  (let [index (-> data .-index)
+        node (aget (.nodes @force) index)]
+    (set! (.-fixed node) false)))
+
 
 
 
@@ -206,6 +243,10 @@
       "set-nodes" (set-nodes data)
       "set-links" (set-links data)
       "precompute" (precompute data)
+
+      "set-position" (set-position data)
+      "pin" (pin data)
+      "unpin" (unpin data)
 
       ;set params
       "size" (swap! parameters assoc :size (js->clj data))

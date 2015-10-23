@@ -52,11 +52,12 @@
 
 (defn create
   "Return a cloned node with a random position and a collider object"
-  [node classifier]
+  [node classifier index]
   (let [ext 2000
         node (.clone js/goog.object node)
         collider (generate-collider node classifier)
         position (new js/THREE.Vector3 (get-rand-pos ext) (get-rand-pos ext) 0)]
+    (set! (.-index node) index)
     (set! (.-position node) position)
     (set! (.-mesh node) collider)
     (set! (.-castShadow collider) true)

@@ -282,7 +282,7 @@
 
 
     (let [mouse (events/listen-to-canvas canvas)]
-      (events/apply-events-to mouse canvas camera raycaster intersect-plane controls state chan-out))
+      (events/apply-events-to mouse canvas camera raycaster intersect-plane controls state force-worker chan-out))
 
 
 
@@ -327,6 +327,10 @@
      :selectNode (λ [node]
                     (swap! state assoc :selected node)
                     (:selected @state))
+     :pinNode (λ [node]
+                 (worker/send force-worker "pin" {:index (-> node .-index)}))
+     :unpinNode (λ [node]
+                 (worker/send force-worker "unpin" {:index (-> node .-index)}))
      }))
 
 

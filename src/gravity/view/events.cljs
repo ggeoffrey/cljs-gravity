@@ -3,6 +3,7 @@
   (:require
    [gravity.tools :refer [log]]
    [gravity.view.tools :as tools]
+   [gravity.force.proxy :as force :refer [send]]
    [cljs.core.async :refer [chan >! <! put!  sliding-buffer]])
   (:require-macros [gravity.macros :refer [λ]]
                    [cljs.core.async.macros :refer [go go-loop alt!]]))
@@ -110,27 +111,36 @@
 
 
 (defn- drag
-  [event canvas camera raycaster events-state intersect-plane]
+  [event canvas camera raycaster events-state intersect-plane force-worker]
   (let [node (:target @events-state)]
     (when-not (nil? node)
-      (log :dragging)
       (let [node (-> node .-object)
+            index (-> node .-node .-index)
             intersect (get-target event canvas camera raycaster (array intersect-plane))]
         (when-not (nil? intersect)
-          (.copy (-> node .-position) (-> intersect .-point))
+          ;;(.copy (-> node .-position) (-> intersect .-point))
+          (force/send force-worker :set-position {:index index
+                                                  :position (-> intersect .-point)})
+          (swap! events-state assoc :last :drag)
           )))))
 
 
 (defn- down
-  [event canvas camera raycaster state events-state]
+  [event canvas camera raycaster state events-state force-worker]
   (let [colliders (:meshes @state)
         target (get-target event canvas camera raycaster colliders)]
     (when-not (nil? target)
+      (force/send force-worker "stop")
       (swap! events-state assoc :target target))))
 
 
 (defn- up
-  [event events-state]
+  [event events-state force-worker]
+  (when (= :drag (:last @events-state))
+    (let [target (:target @events-state)]
+      (when-not (nil? target)
+        (let [index (-> target .-object .-node .-index)]
+          (force/send force-worker :pin #js {:index index})))))
   (swap! events-state dissoc :target))
 
 
@@ -227,7 +237,7 @@
 
 
 (defn apply-events-to
-  [mouse canvas camera raycaster intersect-plane controls state chan-out]
+  [mouse canvas camera raycaster intersect-plane controls state force-worker chan-out]
   (let [events-state (atom {})]
     (go-loop []
              (let [event (<! mouse)
@@ -236,11 +246,11 @@
                     event :event} event]
                (case type
                  :move (do (move event canvas camera raycaster state chan-out events-state controls intersect-plane))
-                 :down (do (down event canvas camera raycaster state events-state))
-                 :up (do (up event events-state))
+                 :down (do (down event canvas camera raycaster state events-state force-worker))
+                 :up (do (up event events-state force-worker))
                  :click (do (click event canvas camera raycaster state chan-out))
                  :double-click (do (double-click event canvas camera raycaster state chan-out))
-                 :drag (do (drag event canvas camera raycaster events-state intersect-plane ))
+                 :drag (do (drag event canvas camera raycaster events-state intersect-plane force-worker))
                  ))
              (recur)))
   nil)
