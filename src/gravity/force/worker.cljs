@@ -1,5 +1,5 @@
-(when-not (undefined? js/self.importScripts)
-	(.importScripts js/self "../libs/d3.js" "../libs/d3.layout.force3d.js"))
+;; (when-not (undefined? js/self.importScripts)
+;; 	(.importScripts js/self "../libs/d3.js" "../libs/d3.layout.force3d.js"))
 
 ;;---------------------------------
 
@@ -93,7 +93,7 @@
 (defn make-force
   []
   (let [params @parameters
-        force-instance (-> (.force js/d3.layout)
+        force-instance (-> (.force3d js/d3.layout)
                            (.size (clj->js (:size params)))
                            (.linkStrength (:linkStrength params))
                            (.friction (:friction params))

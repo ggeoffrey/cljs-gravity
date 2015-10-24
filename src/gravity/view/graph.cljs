@@ -25,10 +25,9 @@
   (let [webgl-params (:webgl user-map)
         width (.-width (:canvas user-map))
         height (.-height (:canvas user-map))
-        camera (new js/THREE.PerspectiveCamera 75 (/ width height) 0.1 100000 )
-        ;;camera (new js/THREE.OrthographicCamera (/ width -2), (/ width 2), (/ height 2), (/ height -2), 1, 10000)
-        ]
+        camera (new js/THREE.PerspectiveCamera 75 (/ width height) 0.1 100000 )]
 
+    (set! (.-z (.-position camera))  300)
 
 
     {	:scene (new js/THREE.Scene)
@@ -238,8 +237,6 @@
       (set! (-> renderer .-shadowMap .-type) js/THREE.PCFSoftShadowMap))
 
 
-
-    (set! (.-z (.-position camera))  50)
 
     (worker/listen force-worker (λ [event]
                                    (let [message (.-data event)

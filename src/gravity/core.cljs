@@ -13,11 +13,11 @@
 
 
 (def default-parameters {:color (.category10 js/d3.scale)
-                         :force {:size [1 1]
+                         :force {:size [1 1 1]
                                  :linkStrength 1
                                  :friction 0.9
-                                 :linkDistance 20
-                                 :charge -30
+                                 :linkDistance 60
+                                 :charge -60
                                  :gravity 0.1
                                  :theta 0.8
                                  :alpha 0.1}

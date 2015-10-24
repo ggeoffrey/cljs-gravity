@@ -45,7 +45,7 @@
   (let [geometry (get-unique-geometry)
         material (get-unique-material (get-unique-color node classifier))
         sphere (new js/THREE.Mesh geometry material)]
-    (.set (.-scale sphere) 0.3 0.3 0.3)
+    (.set (.-scale sphere) 1 1 1)
     sphere))
 
 
