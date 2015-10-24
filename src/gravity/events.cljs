@@ -2,7 +2,7 @@
   (:require-macros
    [gravity.macros :refer [λ]]
    [cljs.core.async.macros :refer [go]])
-  (:require [cljs.core.async :refer [<! chan]]
+  (:require [cljs.core.async :refer [<! >! chan]]
             [gravity.tools :refer [log]]))
 
 
@@ -12,7 +12,7 @@
   - avoiding a :require into core
   - centralizing the creation"
   []
-  (chan 1024))
+  (chan 512))
 
 
 (defn create-store
@@ -45,69 +45,58 @@
   (let [deref-callbacks (:get-callbacks store)]
     (deref-callbacks)))
 
-(defn- trigger
+
+
+(defn- call
   [callback & args]
   (when-not (nil? callback)
     (apply callback args)))
 
 
+(defn- trigger
+  "Trigger an event taking no arguments"
+  ([callback-key store]
+   (trigger callback-key store nil))
 
-(defn- trigger-ready
-  [store]
-  (let [store (get-callbacks store)
-        callback (:ready store)]
-    (when-not (nil? callback)
-      (trigger callback))))
-
-
-
-(defn- trigger-nodeover
-  "If the mouse hovered a node"
-  [event state store]
-  (let [store (get-callbacks store)
-        callback (:nodeover store)]
-    (when (nil? (:target @state))
-      (swap! state assoc :target (:target event))
-      (trigger callback (:target event)))))
-
-(defn- trigger-select-node
-  "If the mouse click a node"
-  [event state store]
-  (let [store (get-callbacks store)
-        callback (:nodeselect store)]
-    (trigger callback (:target event))))
+  ([callback-key store object-to-pass]
+   (let [store (get-callbacks store)
+         callback (callback-key store)]
+     (call callback object-to-pass))))
 
 
-(defn- trigger-nodeblur
-  "If the mouse hovered a node, trigger call the callback"
-  [event state store]
-  (let [store (get-callbacks store)
-        callback (:nodeblur store)]
-    (when-not (nil? (:target @state))
-      (swap! state assoc :target nil)
-      (trigger callback))))
 
 
 
 
 ;; dispatcher
 
-(defn listen
-  "Listen to a chan and trigger the appropriate callbacks if found in the events-store"
-  [chan store]
-  (let [state (atom {:target nil
-                     :selected nil})]
+(defn listen-outgoing-events
+  "Listen to an output chan and trigger the appropriate callbacks if found in the events-store."
+  [chan-out store]
+  (let [state (atom {:target nil})]
     (go
      (while true
-       (let [event (<! chan)]
+       (let [event (<! chan-out)
+             node (:target event)]
          (case (:type event)
-           "ready" (trigger-ready store)
-           :mouse-in-node (trigger-nodeover event state store)
-           :mouse-out-node (trigger-nodeblur event state store)
-           :select-node (trigger-select-node event state store)
+           :ready (trigger :ready store)
+           :node-over (do
+                            (swap! state assoc :target node)
+                            (trigger :node-over store node))
+           :node-blur (do
+                             (swap! state assoc :target nil)
+                             (trigger :node-blur store))
+           :node-select (do
+                          (swap! state assoc :selected node)
+                          (trigger :node-select store node))
+
+           :node-click (trigger :node-click store node)
+           :node-dbl-click (trigger :node-dbl-click store node)
+           :void-click (trigger :void-click store)
+           :drag-start (trigger :drag-start store node)
+           :drag-end   (trigger :drag-end store node)
            nil)
          )))))
-
 
 
 

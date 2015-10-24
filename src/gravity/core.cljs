@@ -12,9 +12,8 @@
 (defonce app-state (atom {}))
 
 
-
 (def default-parameters {:color (.category10 js/d3.scale)
-                         :force {:size [1 1]
+                         :force {:size [1 1 1]
                                  :linkStrength 1
                                  :friction 0.9
                                  :linkDistance 20
@@ -34,12 +33,36 @@
 
   (let [{on :on
          canvas :canvas} graph]
-    (on "nodeover" (λ [node]
-                      (set! (-> canvas .-style .-cursor) "pointer")))
-    (on "nodeblur" (λ []
-                      (set! (-> canvas .-style .-cursor) "inherit")))
-    (on "nodeselect" (λ [node]
-                        (log [:select (.-name node) node])))
+    (on "node-over" (λ [node]
+                       (log :over)
+                       (set! (-> canvas .-style .-cursor) "pointer")))
+    (on "node-blur" (λ []
+                       (log :blur)
+                       (set! (-> canvas .-style .-cursor) "inherit")))
+    (on "node-select" (λ [node]
+                         (log :void)
+                         (log [:select (.-name node) node])))
+    (on "void-click" (λ []
+                        (log [:void])))
+    (on "node-click" (λ [node]
+                        (log :node-click)
+                        (let [select (:selectNode graph)]
+                          (select node))))
+    (on "node-dbl-click" (λ [node]
+                            (log :dbl-click)
+                            (let [unpin (:unpinNode graph)
+                                  resume (:resume graph)]
+                              (unpin node)
+                              (resume))))
+    (on "drag-start" (λ [node]
+                        (log :drag-start)))
+    (on "drag-end" (λ [node]
+                      (log :drag-end)
+                      (log node)
+                      (let [pin (:pinNode graph)
+                            resume (:resume graph)]
+                        (pin node)
+                        (resume))))
     (on "ready" (λ []
                    (let [set-nodes (:nodes graph)
                          set-links (:links graph)
@@ -84,11 +107,13 @@
 
   ([user-map dev-mode]
 
-   (let [chan (events/create-chan)
+   (let [chan-out (events/create-chan)
          store (events/create-store)
-         graph (graph/create user-map chan dev-mode)  ;; <--
-         graph (merge graph store)]
-     (events/listen chan store)
+         graph (graph/create user-map chan-out dev-mode)  ;; <--
+         graph (-> graph
+                   (merge store)
+                   (dissoc :get-callbacks))]
+     (events/listen-outgoing-events chan-out store)
      (bind-dev-events graph)
      graph)))
 

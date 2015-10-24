@@ -1,5 +1,5 @@
-(when-not (undefined? js/self.importScripts)
-	(.importScripts js/self "../libs/d3.js" "../libs/d3.layout.force3d.js"))
+;; (when-not (undefined? js/self.importScripts)
+;; 	(.importScripts js/self "../libs/d3.js" "../libs/d3.layout.force3d.js"))
 
 ;;---------------------------------
 
@@ -93,7 +93,7 @@
 (defn make-force
   []
   (let [params @parameters
-        force-instance (-> (.force js/d3.layout)
+        force-instance (-> (.force3d js/d3.layout)
                            (.size (clj->js (:size params)))
                            (.linkStrength (:linkStrength params))
                            (.friction (:friction params))
@@ -147,6 +147,7 @@
 (defn set-nodes
   "Set the nodes list"
   [nb-nodes]
+  (stop)
   (let [new-force (make-force)
         nodes (if-not (nil? @force)
                 (.nodes @force)
@@ -187,6 +188,49 @@
 
 
 
+(defn set-position
+  "Set a node's position"
+  [data]
+  (let [index (-> data .-index)
+        position (-> data .-position)
+        node (aget (.nodes @force) index)
+        alpha (.alpha @force)]
+
+    (stop)
+
+    ;;(when-not (> alpha 0)
+      ;;(.alpha @force 0.01))
+
+    (set! (.-x node) (.-x position))
+    (set! (.-y node) (.-y position))
+    (set! (.-z node) (.-z position))
+
+
+    (set! (.-px node) (.-x position))
+    (set! (.-py node) (.-y position))
+    (set! (.-pz node) (.-z position))
+
+    ;;(set! (.-fixed node) false)
+
+    (tick nil)
+    ))
+
+
+(defn pin
+  "pin a node by index"
+  [data]
+  (let [index (-> data .-index)
+        node (aget (.nodes @force) index)]
+    (set! (.-fixed node) true)))
+
+
+(defn unpin
+  "unpin a node by index"
+  [data]
+  (let [index (-> data .-index)
+        node (aget (.nodes @force) index)]
+    (set! (.-fixed node) false)))
+
 
 
 
@@ -206,6 +250,10 @@
       "set-nodes" (set-nodes data)
       "set-links" (set-links data)
       "precompute" (precompute data)
+
+      "set-position" (set-position data)
+      "pin" (pin data)
+      "unpin" (unpin data)
 
       ;set params
       "size" (swap! parameters assoc :size (js->clj data))

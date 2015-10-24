@@ -84,3 +84,57 @@
   (if-not spots
     (conj [] (get-flat-light))
     (get-spot-lights)))
+
+
+
+(defn get-circle
+  "Return a circle meant to be placed and animated on a node."
+  ([]
+   (get-circle 32 15))
+
+  ([nb-segments radius]
+   (let [material (new js/THREE.LineBasicMaterial #js {:color 0xff0000})
+         geometry (new js/THREE.Geometry)]
+     (doseq [i (range nb-segments)]
+       (let [theta (-> i
+                       (/ nb-segments)
+                       (* Math/PI)
+                       (* 2))
+             cos (-> (Math/cos theta)
+                     (* radius))
+             sin (-> (Math/sin theta)
+                     (* radius))
+             vect (new js/THREE.Vector3 cos sin 0)]
+         (.push (-> geometry .-vertices) vect)))
+     ;; close circle
+     (.push (-> geometry .-vertices) (aget (-> geometry .-vertices) 0))
+     ;ret
+     (new js/THREE.Line geometry material))))
+
+
+
+
+
+(defn get-intersect-plane
+  "Return a big plane filling the sphere. Used to drag nodes"
+  []
+  (let [side 4000
+        material (new js/THREE.MeshBasicMaterial #js {:wireframe true})
+        geometry (new js/THREE.PlaneGeometry side side 1 1)
+        mesh (new js/THREE.Mesh geometry material)]
+    mesh))
+
+
+
+
+
+(defn remove-children
+  [object3D]
+  (loop [len (dec (-> object3D .-children .-length))
+         i (range 0 len)]
+
+    (.remove object3D (aget (-> object3D .-children) 0))
+
+    (when (< i len)
+      (recur len (inc i))))
+  nil)

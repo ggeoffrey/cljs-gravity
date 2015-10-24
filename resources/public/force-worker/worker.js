@@ -9,6 +9,10 @@ importScripts(  "../js/compiled/out/goog/base.js",
 				"../js/compiled/out/gravity/force/worker.js"
 );
 
+
+importScripts("../libs/d3-3d.js");
+
+
 goog.require("gravity.force.worker");
 gravity.force.worker.main();
 //*/

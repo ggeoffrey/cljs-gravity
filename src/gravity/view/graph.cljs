@@ -27,6 +27,7 @@
         height (.-height (:canvas user-map))
         camera (new js/THREE.PerspectiveCamera 75 (/ width height) 0.1 100000 )]
 
+    (set! (.-z (.-position camera))  300)
 
 
     {	:scene (new js/THREE.Scene)
@@ -58,13 +59,22 @@
 
 (defn- render-callback
   "Return a function rendering the context"
-  [renderer scene camera stats state]
+  [renderer scene camera stats state controls select-circle]
   (λ render []
+
+     (.update controls)
+
      (when-not (nil? stats)
        (.begin stats))
 
      (if (get @state :should-run)
        (do
+         (when-not (nil? select-circle)
+           (let [x1 (-> select-circle .-rotation .-x)
+                 y1 (-> select-circle .-rotation .-y)
+                 x2 (+ x1 0.01)
+                 y2 (+ y1 0.1)]
+             (.set (-> select-circle .-rotation) x2 y2 0)))
          (.requestAnimationFrame js/window render)
          (.render renderer scene camera)))
 
@@ -79,8 +89,9 @@
   and triggering the render function once"
   [state render]
   (λ []
-     (swap! state assoc :should-run true)
-     (render)
+     (when-not (:should-run @state)
+       (swap! state assoc :should-run true)
+       (render))
      nil))
 
 
@@ -160,6 +171,13 @@
        )))
 
 
+
+
+
+
+
+
+
 ;; USE ALL THE ABOVE
 
 
@@ -171,7 +189,7 @@
 
 (defn create
   "Initialise a context in the specified element id"
-  [user-map chan dev-mode]
+  [user-map chan-out dev-mode]
   (let [{	first-run :first-run
           scene :scene
           width :width
@@ -188,6 +206,9 @@
         canvas (if-not (nil? (:canvas user-map))
                  (:canvas user-map)
                  (.-domElement renderer))
+
+        select-circle (tools/get-circle)
+        intersect-plane (tools/get-intersect-plane)
         ;;data-test (demo/get-demo-graph)
         ;;{nodes :nodes
         ;; meshes :meshes} (points/prepare-nodes (.-nodes data-test) classifier)
@@ -195,14 +216,15 @@
         ;;links (.-links data-test)
         ;;nodeset (points/create nodes classifier)
         ;;links-set (points/create-links nodes links)
-        render (render-callback renderer scene camera stats state)]
+        render (render-callback renderer scene camera stats state controls select-circle)]
 
 
-;;     (swap! state assoc :nodes nodes)
-;;     (swap! state assoc :meshes meshes)
-;;     (swap! state assoc :links links)
-;;     (swap! state assoc :links-set links-set)
+    ;;     (swap! state assoc :nodes nodes)
+    ;;     (swap! state assoc :meshes meshes)
+    ;;     (swap! state assoc :links links)
+    ;;     (swap! state assoc :links-set links-set)
     (swap! state assoc :classifier classifier)
+    (swap! state assoc :select-circle select-circle)
 
 
     ;; renderer
@@ -216,8 +238,6 @@
 
 
 
-    (set! (.-z (.-position camera))  50)
-
     (worker/listen force-worker (λ [event]
                                    (let [message (.-data event)
                                          type (.-type message)
@@ -225,7 +245,7 @@
                                      (case type
                                        "ready" (do
                                                  (init-force force-worker dev-mode first-run)
-                                                 (events/notify-user-ready chan))
+                                                 (events/notify-user-ready chan-out))
                                        "nodes-positions" (let [state @state]
                                                            (points/update-positions! (:nodes state) data)
                                                            ;;(points/update nodeset)
@@ -240,25 +260,33 @@
       (tools/fill-window! canvas)
       (.removeEventListener canvas "mousemove")
       (.removeEventListener canvas "click")
-      (events/notify-user-ready chan))
+      (events/notify-user-ready chan-out))
 
 
 
 
 
-    ;(worker/send force-worker "precompute" 50)
-
-    ;; adding nodes
-    ;;(doseq [item meshes]
-    ;;  (.add scene item))
-
-    ;; adding links
-    ;;(.add scene links-set)
+    ;;(worker/send force-worker "precompute" 50)
 
 
-    (.addEventListener canvas "mousemove" (events/onDocMouseMove canvas camera raycaster state chan))
-    (.addEventListener canvas "click" (events/on-click canvas camera raycaster state chan))
+    (.add scene select-circle)
+    (.add scene intersect-plane)
+
+
+    ;(.addEventListener canvas "mousemove" (events/onDocMouseMove canvas camera raycaster state chan-out))
+    ;(.addEventListener canvas "click" (events/on-click canvas camera raycaster state chan-out))
+    ;(.addEventListener canvas "dblclick" (events/on-dbl-click canvas camera raycaster state chan-out))
     (.addEventListener js/window "resize" (events/onWindowResize canvas renderer camera))
+
+
+
+    (let [mouse (events/listen-to-canvas canvas)]
+      (events/apply-events-to mouse canvas camera raycaster intersect-plane controls state force-worker chan-out))
+
+
+
+
+
 
     (let [webgl-params (:webgl user-map)]
       ;; add background
@@ -268,6 +296,9 @@
       ;; add lights
       (doseq [light (tools/get-lights (:lights webgl-params))]
         (.add scene light)))
+
+
+    (events/watch-state state :main-watcher)
 
 
     (render)
@@ -291,6 +322,21 @@
              :theta          (λ [val] (worker/send force-worker "theta" val))
              :alpha          (λ [val] (worker/send force-worker "alpha" val))
              }
+
+     :selectNode (λ [node]
+                    (swap! state assoc :selected node)
+                    (:selected @state))
+     :pinNode (λ [node]
+                 (let [circle (tools/get-circle)
+                       mesh (-> node .-mesh)]
+                   (set! (-> mesh .-circle) circle)
+                   (.add mesh circle))
+                 (worker/send force-worker "pin" {:index (-> node .-index)}))
+     :unpinNode (λ [node]
+                   (tools/remove-children (-> node .-mesh))
+                   (.remove (-> node .-mesh) (-> node .-mesh .-circle))
+                   (worker/send force-worker "unpin" {:index (-> node .-index)}))
+     :camera camera
      }))
 
 
