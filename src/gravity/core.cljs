@@ -11,7 +11,6 @@
 
 (defonce app-state (atom {}))
 
-(+ 1 2)
 
 (def default-parameters {:color (.category10 js/d3.scale)
                          :force {:size [1 1]
@@ -55,6 +54,15 @@
                                   resume (:resume graph)]
                               (unpin node)
                               (resume))))
+    (on "drag-start" (λ [node]
+                        (log :drag-start)))
+    (on "drag-end" (λ [node]
+                      (log :drag-end)
+                      (log node)
+                      (let [pin (:pinNode graph)
+                            resume (:resume graph)]
+                        (pin node)
+                        (resume))))
     (on "ready" (λ []
                    (let [set-nodes (:nodes graph)
                          set-links (:links graph)

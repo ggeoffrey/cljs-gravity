@@ -93,6 +93,8 @@
            :node-click (trigger :node-click store node)
            :node-dbl-click (trigger :node-dbl-click store node)
            :void-click (trigger :void-click store)
+           :drag-start (trigger :drag-start store node)
+           :drag-end   (trigger :drag-end store node)
            nil)
          )))))
 

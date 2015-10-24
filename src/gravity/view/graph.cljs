@@ -25,7 +25,9 @@
   (let [webgl-params (:webgl user-map)
         width (.-width (:canvas user-map))
         height (.-height (:canvas user-map))
-        camera (new js/THREE.PerspectiveCamera 75 (/ width height) 0.1 100000 )]
+        camera (new js/THREE.PerspectiveCamera 75 (/ width height) 0.1 100000 )
+        ;;camera (new js/THREE.OrthographicCamera (/ width -2), (/ width 2), (/ height 2), (/ height -2), 1, 10000)
+        ]
 
 
 
@@ -334,8 +336,10 @@
                    (.add mesh circle))
                  (worker/send force-worker "pin" {:index (-> node .-index)}))
      :unpinNode (λ [node]
+                   (tools/remove-children (-> node .-mesh))
                    (.remove (-> node .-mesh) (-> node .-mesh .-circle))
                    (worker/send force-worker "unpin" {:index (-> node .-index)}))
+     :camera camera
      }))
 
 

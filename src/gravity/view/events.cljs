@@ -16,8 +16,8 @@
   [canvas renderer camera]
   (λ []
      (tools/fill-window! canvas)
-     (let [width (.-innerWidth js/window)
-           height (.-innerHeight js/window)]
+     (let [width (.-width canvas)
+           height (.-height canvas)]
        (set! (.-aspect camera) (/ width height))
        (.updateProjectionMatrix camera)
        (.setSize renderer width height))
@@ -33,17 +33,19 @@
   Return the first intersected or nil"
   [event canvas camera raycaster objects]
   (when-not (or (nil? objects) (empty? objects))
-    (let [mouse-pos (new js/THREE.Vector3)
+    (let [scene-width (.-width canvas)
+          scene-height (.-height canvas)
+          mouse-pos (new js/THREE.Vector3)
           bounding-rect (.getBoundingClientRect canvas)
           x (-> (.-clientX event)
                 (- (.-left bounding-rect))
-                (/ (.-offsetWidth canvas))
+                (/  scene-width);;(.-offsetWidth canvas))
                 (* 2)
                 (- 1))
           y (-> (.-clientY event)
                 (- (.-top bounding-rect))
-                (/ (.-offsetHeight canvas))
                 (-)
+                (/ scene-height);;(.-offsetHeight canvas))
                 (* 2)
                 (+ 1))
           cam-position (.-position camera)]
@@ -71,15 +73,19 @@
         (.copy (-> intersect-plane .-position) (-> node .-position))
         (.lookAt intersect-plane (-> camera .-position))
         ;; send event to the user
-        (go
-           (swap! events-state assoc :last :node-over)
+        (when-not (= :node-over (:last @events-state))
+          (swap! events-state assoc :last :node-over)
+          (go
            (>! chan {:type :node-over
-                      :target node})))
+                     :target node}))))
       ;else
-      (when true;;(= :node-over (:last @events-state))
+      (when (or
+             (= :node-over (:last @events-state))
+             (= :drag (:last @events-state))
+             (= :up (:last @events-state)))
         (set! (-> controls .-enabled) true)
-        (go (>! chan {:type :node-blur})
-            (swap! events-state assoc :last :blur))))))
+        (swap! events-state assoc :last :blur)
+        (go (>! chan {:type :node-blur}))))))
 
 
 (defn- click
@@ -112,7 +118,7 @@
 
 
 (defn- drag
-  [event canvas camera raycaster events-state intersect-plane force-worker]
+  [event canvas camera raycaster events-state intersect-plane force-worker chan-out]
   (let [node (:target @events-state)]
     (when-not (nil? node)
       (let [node (-> node .-object)
@@ -122,6 +128,10 @@
           ;;(.copy (-> node .-position) (-> intersect .-point))
           (force/send force-worker :set-position {:index index
                                                   :position (-> intersect .-point)})
+          (when (= :down (:last @events-state))
+            (force/send force-worker "stop")
+            (go (>! chan-out {:type :drag-start
+                              :traget node})))
           (swap! events-state assoc :last :drag)
           )))))
 
@@ -132,16 +142,20 @@
         target (get-target event canvas camera raycaster colliders)]
     (when-not (nil? target)
       (force/send force-worker "stop")
+      (swap! events-state assoc :last :down)
       (swap! events-state assoc :target target))))
 
 
 (defn- up
-  [event events-state force-worker]
+  [event events-state force-worker chan-out]
   (when (= :drag (:last @events-state))
     (let [target (:target @events-state)]
+      (log "drag-end-before")
       (when-not (nil? target)
-        (let [index (-> target .-object .-node .-index)]
-          (force/send force-worker :pin #js {:index index})))))
+        (log "drag-end-with-target")
+        (go (>! chan-out {:type :drag-end
+                          :target (-> target .-object .-node)})))))
+  (swap! events-state assoc :last :up)
   (swap! events-state dissoc :target))
 
 
@@ -248,15 +262,16 @@
                (case type
                  :move (do (move event canvas camera raycaster state chan-out events-state controls intersect-plane))
                  :down (do (down event canvas camera raycaster state events-state force-worker))
-                 :up (do (up event events-state force-worker))
+                 :up (do (up event events-state force-worker chan-out))
                  :click (do (click event canvas camera raycaster state chan-out))
                  :double-click (do (double-click event canvas camera raycaster state chan-out))
-                 :drag (do (drag event canvas camera raycaster events-state intersect-plane force-worker))
+                 :drag (do (drag event canvas camera raycaster events-state intersect-plane force-worker chan-out))
                  ))
              (recur)))
   nil)
 
 ;; State watch
+
 
 
 (defn put-select-circle-on-node

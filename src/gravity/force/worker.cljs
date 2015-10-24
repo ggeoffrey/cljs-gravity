@@ -147,6 +147,7 @@
 (defn set-nodes
   "Set the nodes list"
   [nb-nodes]
+  (stop)
   (let [new-force (make-force)
         nodes (if-not (nil? @force)
                 (.nodes @force)
@@ -195,17 +196,23 @@
         node (aget (.nodes @force) index)
         alpha (.alpha @force)]
 
-    ;;(stop)
+    (stop)
 
-    (when-not (> alpha 0)
-      (.alpha @force 0.01))
+    ;;(when-not (> alpha 0)
+      ;;(.alpha @force 0.01))
 
     (set! (.-x node) (.-x position))
     (set! (.-y node) (.-y position))
+    (set! (.-z node) (.-z position))
 
-    (set! (.-fixed node) false)
 
-    ;;(.tick @force)
+    (set! (.-px node) (.-x position))
+    (set! (.-py node) (.-y position))
+    (set! (.-pz node) (.-z position))
+
+    ;;(set! (.-fixed node) false)
+
+    (tick nil)
     ))
 
 

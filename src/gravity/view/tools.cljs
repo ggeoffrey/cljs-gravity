@@ -125,3 +125,16 @@
     mesh))
 
 
+
+
+
+(defn remove-children
+  [object3D]
+  (loop [len (dec (-> object3D .-children .-length))
+         i (range 0 len)]
+
+    (.remove object3D (aget (-> object3D .-children) 0))
+
+    (when (< i len)
+      (recur len (inc i))))
+  nil)
