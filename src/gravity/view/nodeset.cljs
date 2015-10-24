@@ -16,7 +16,7 @@
   [nodes links]
   (let [geometry (new js/THREE.Geometry)
         vertices (.-vertices geometry)
-        material (new js/THREE.LineBasicMaterial #js {"color" 0xffffff})
+        material (new js/THREE.LineBasicMaterial #js {"color" 0xfafafa})
         system (new js/THREE.LineSegments geometry material)
         size (dec (.-length links))]
     (doseq [link links]
