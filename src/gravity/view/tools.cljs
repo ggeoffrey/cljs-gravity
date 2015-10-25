@@ -9,8 +9,10 @@
 (defn fill-window!
   "Resize a canvas to make it fill the window"
   [canvas]
-  (let [width (.-innerWidth js/window)
-        height (.-innerHeight js/window)]
+  (set! (-> canvas .-style .-width) "100%")
+  (set! (-> canvas .-style .-height) "100%")
+  (let [width (.-offsetWidth canvas)
+        height (.-offsetHeight canvas)]
     (set! (.-width canvas) width)
     (set! (.-height canvas) height))
   nil)

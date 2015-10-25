@@ -5,6 +5,12 @@ html, body{
 	margin: 0;
 }
 
+#container {
+	width : 50%;
+	height : 50%;
+	margin : 1em;	
+}
+
 #target{
 	width : 100%;
 	height: 100%;
