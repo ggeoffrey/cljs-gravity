@@ -283,15 +283,14 @@
 
     (let [webgl-params (:webgl user-map)
 					background? (:background webgl-params)
-					lights? (:lights webgl-params)
-					spots? (and background? lights?)]
+					lights? (:lights webgl-params)]
       ;; add background
       (when background?
         (.add scene (tools/get-background)))
 
       ;; add lights
 
-			(doseq [light (tools/get-lights spots?)]
+			(doseq [light (tools/get-lights lights?)]
 				(.add scene light)))
 
 

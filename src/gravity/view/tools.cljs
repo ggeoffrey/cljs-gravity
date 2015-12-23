@@ -74,7 +74,7 @@
                     positions)]
     (let [main-light (first lights)]
       (set! (.-castShadow main-light) true)
-      (set! (.-shadowCameraVisible main-light) true))
+      (set! (.-shadowCameraVisible main-light) false))
 
     lights))
 
