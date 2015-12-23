@@ -11,7 +11,7 @@
 (defn log
   "Log in the console"
   [& args]
-  ;(.log js/console (get-args args))
+  (.log js/console (get-args args))
 	)
 
 (defn warn

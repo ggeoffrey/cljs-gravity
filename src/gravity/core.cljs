@@ -1,6 +1,6 @@
 (ns ^:figwheel-always gravity.core
   (:require [gravity.view.graph :as graph]
-            [gravity.view.tools :as tools]
+            [gravity.view.graph-tools :as tools]
             [gravity.events :as events]
             [gravity.force.proxy :as worker]
             [gravity.tools :refer [log]]
@@ -98,7 +98,7 @@
      :webgl webgl-merged}))
 
 
-(defn ^:export main
+(defn- main
 
   ([user-map]
    (let [graph (main user-map false)]
@@ -154,6 +154,15 @@
      (on-js-reload))))
 
 
+
+(defn ^:export create
+	[user-map]
+	(let [user-map (js->clj user-map :keywordize-keys true)
+				params (init-parameters user-map)
+				state (merge user-map params)
+
+				graph (main state false)]
+		(clj->js graph)))
 
 
 

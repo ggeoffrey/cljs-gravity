@@ -6,7 +6,7 @@ html, body{
 }
 
 #container {
-	width : 100%;
+	width : 50%;
 	height : auto;
 	margin : 0em;
 }
@@ -24,4 +24,5 @@ html, body{
 	font-weight: bold;
 
 	margin: 1em;
+	display: none;
 }

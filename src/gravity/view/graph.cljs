@@ -3,8 +3,8 @@
    [gravity.tools :refer [log]]
    [gravity.view.node :as node]
    [gravity.view.nodeset :as points]
-   [gravity.view.tools :as tools]
-   [gravity.view.events :as events]
+   [gravity.view.graph-tools :as tools]
+   [gravity.view.events-generator :as events]
    [gravity.force.proxy :as worker]))
 
 
@@ -18,7 +18,7 @@
 (defn get-components
   "Generate or re-use all the necessary components of the 3D view"
   [user-map dev-mode]
-  (if dev-mode
+  (if (:canvas user-map)
     (tools/fill-window! (:canvas user-map)))
 
   (let [webgl-params (:webgl user-map)
@@ -273,7 +273,8 @@
 
 
 
-    (let [mouse (events/listen-to-canvas canvas)]
+    (let [;mouse (events/listen-to-canvas canvas)
+					mouse (events/listen-to-canvas js/window.document)]
       (events/apply-events-to mouse canvas camera raycaster intersect-plane controls state force-worker chan-out))
 
 
