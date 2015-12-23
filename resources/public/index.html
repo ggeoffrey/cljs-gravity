@@ -10,10 +10,11 @@
 
         <div id="container">
         	<canvas id="target"></canvas>
+					<div id="tooltip"></div>
         </div>
-        
 
-        <script src="libs/three.min.js"></script>
+
+        <script src="libs/three.js"></script>
         <script src="libs/OrbitControls.js"></script>
         <script src="libs/d3-3d.js"></script>
         <script src="libs/stats.min.js"></script>
@@ -23,6 +24,8 @@
 
             function start () {
                 var canvas = document.getElementById('target');
+								var tooltip = document.getElementById('tooltip');
+
                 var gg = gravity.core.init_dev_mode({
                     canvas: canvas,
 //                     color : d3.scale.category10(),
@@ -47,15 +50,23 @@
                 document.body.appendChild(gg.stats.domElement);
                 window.gg = gg;
 
-                /*
-                gg.on("nodeover", function(node){
-                    canvas.style.cursor = "pointer";
+
+                gg.on("node-over", function(node, event){
+									 canvas.style.cursor = "pointer";
+                   tooltip.style.top = event.clientY + "px";
+									 tooltip.style.left = event.clientX + "px";
+									 tooltip.style.display = "block";
+
+									 tooltip.innerText = node.name;
                 });
 
-                 gg.on("nodeblur", function(){
+
+								gg.on("node-blur", function(){
                     canvas.style.cursor = "inherit";
+									  tooltip.style.display = "none";
                 });
 
+								/*
                 gg.on("nodeselect", function(node){
                     alert(node.name);
                 });

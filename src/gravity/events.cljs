@@ -1,7 +1,5 @@
 (ns gravity.events
-  (:require-macros
-   [gravity.macros :refer [λ]]
-   [cljs.core.async.macros :refer [go]])
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :refer [<! >! chan]]
             [gravity.tools :refer [log]]))
 
@@ -24,7 +22,7 @@
   (let [callbacks-map (atom {})]
 
     ;;return 'on'
-    {:on (λ [cb-key callback]
+    {:on (fn [cb-key callback]
             (swap! callbacks-map assoc (keyword cb-key) callback))
      :off (fn
             ([]
@@ -32,7 +30,7 @@
             ([cb-key]
              (swap! callbacks-map assoc (keyword cb-key) nil)) )
 
-     :get-callbacks (λ [] @callbacks-map)}))
+     :get-callbacks (fn [] @callbacks-map)}))
 
 
 
@@ -56,12 +54,15 @@
 (defn- trigger
   "Trigger an event taking no arguments"
   ([callback-key store]
-   (trigger callback-key store nil))
+   (trigger callback-key store nil nil))
 
-  ([callback-key store object-to-pass]
+	([callback-key store object-to-pass]
+	 (trigger callback-key store object-to-pass nil))
+
+  ([callback-key store object-to-pass original-event]
    (let [store (get-callbacks store)
          callback (callback-key store)]
-     (call callback object-to-pass))))
+     (call callback object-to-pass original-event))))
 
 
 
@@ -77,24 +78,25 @@
     (go
      (while true
        (let [event (<! chan-out)
-             node (:target event)]
+             node (:target event)
+						 original-event (:original-event event)]
          (case (:type event)
            :ready (trigger :ready store)
            :node-over (do
                             (swap! state assoc :target node)
-                            (trigger :node-over store node))
+                            (trigger :node-over store node original-event))
            :node-blur (do
                              (swap! state assoc :target nil)
-                             (trigger :node-blur store))
+                             (trigger :node-blur store original-event))
            :node-select (do
                           (swap! state assoc :selected node)
-                          (trigger :node-select store node))
+                          (trigger :node-select store node original-event))
 
-           :node-click (trigger :node-click store node)
-           :node-dbl-click (trigger :node-dbl-click store node)
-           :void-click (trigger :void-click store)
-           :drag-start (trigger :drag-start store node)
-           :drag-end   (trigger :drag-end store node)
+           :node-click (trigger :node-click store node original-event)
+           :node-dbl-click (trigger :node-dbl-click store node original-event)
+           :void-click (trigger :void-click store original-event)
+           :drag-start (trigger :drag-start store node original-event)
+           :drag-end   (trigger :drag-end store node original-event)
            nil)
          )))))
 

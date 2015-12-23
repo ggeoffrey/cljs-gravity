@@ -5,8 +5,7 @@
    [gravity.view.nodeset :as points]
    [gravity.view.tools :as tools]
    [gravity.view.events :as events]
-   [gravity.force.proxy :as worker])
-  (:require-macros [gravity.macros :refer [λ]]))
+   [gravity.force.proxy :as worker]))
 
 
 
@@ -60,7 +59,7 @@
 (defn- render-callback
   "Return a function rendering the context"
   [renderer scene camera stats state controls select-circle]
-  (λ render []
+  (fn render []
 
      (.update controls)
 
@@ -88,7 +87,7 @@
   "Return a closure affecting the application state atom
   and triggering the render function once"
   [state render]
-  (λ []
+  (fn []
      (when-not (:should-run @state)
        (swap! state assoc :should-run true)
        (render))
@@ -99,13 +98,13 @@
 (defn- stop-callback!
   "Return a closure affecting the application state atom"
   [state]
-  (λ []
+  (fn []
      (swap! state assoc :should-run false) nil))
 
 (defn- resume-force-callback
   "Send a resume event to the force worker"
   [force-worker]
-  (λ []
+  (fn []
      (worker/send force-worker "resume")))
 
 
@@ -145,14 +144,14 @@
 (defn- set-nodes-callback
   "Allow the user to replace nodes with a new set of nodes"
   [state scene]
-  (λ [nodes]
+  (fn [nodes]
      (if (nil? nodes)
        (:nodes @state)
        (set-nodes state scene nodes))))
 
 (defn- set-links-callback
   [state scene]
-  (λ [links]
+  (fn [links]
      (if (nil? links)
        (:links @state)
        (set-links state scene links))))
@@ -162,7 +161,7 @@
 
 (defn- update-force-callback
   [state force-worker]
-  (λ []
+  (fn []
      (let [nodes (:nodes @state)
            links (:links @state)]
        (worker/send force-worker "set-nodes" (count nodes))
@@ -229,7 +228,7 @@
 
     ;; renderer
     (.setSize renderer width height)
-    (.setClearColor renderer 0x000000)
+    (.setClearColor renderer 0x404040)
 
     ;;shadows
     (when (:shadows (:webgl user-map))
@@ -238,7 +237,7 @@
 
 
 
-    (worker/listen force-worker (λ [event]
+    (worker/listen force-worker (fn [event]
                                    (let [message (.-data event)
                                          type (.-type message)
                                          data (.-data message)]
@@ -263,19 +262,13 @@
       (events/notify-user-ready chan-out))
 
 
-
-
-
     ;;(worker/send force-worker "precompute" 50)
 
-
     (.add scene select-circle)
+		(set! (-> select-circle .-visible) false)
+
     (.add scene intersect-plane)
 
-
-    ;(.addEventListener canvas "mousemove" (events/onDocMouseMove canvas camera raycaster state chan-out))
-    ;(.addEventListener canvas "click" (events/on-click canvas camera raycaster state chan-out))
-    ;(.addEventListener canvas "dblclick" (events/on-dbl-click canvas camera raycaster state chan-out))
     (.addEventListener js/window "resize" (events/onWindowResize canvas renderer camera))
 
 
@@ -288,14 +281,18 @@
 
 
 
-    (let [webgl-params (:webgl user-map)]
+    (let [webgl-params (:webgl user-map)
+					background? (:background webgl-params)
+					lights? (:lights webgl-params)
+					spots? (and background? lights?)]
       ;; add background
-      (when (:background webgl-params)
+      (when background?
         (.add scene (tools/get-background)))
 
       ;; add lights
-      (doseq [light (tools/get-lights (:lights webgl-params))]
-        (.add scene light)))
+
+			(doseq [light (tools/get-lights spots?)]
+				(.add scene light)))
 
 
     (events/watch-state state :main-watcher)
@@ -303,36 +300,37 @@
 
     (render)
 
+		;; return closures to user
+
     {:start (start-callback! state render)
      :stop (stop-callback! state)
      :resume (resume-force-callback force-worker)
-     :tick (λ [] (worker/send force-worker "tick"))
+     :tick (fn [] (worker/send force-worker "tick"))
      :canvas (.-domElement renderer)
      :stats stats
      :nodes (set-nodes-callback state scene)
      :links (set-links-callback state scene)
      :updateForce (update-force-callback state force-worker)
 
-     :force {:size           (λ [array] (worker/send force-worker "size" array))
-             :linkStrength   (λ [val] (worker/send force-worker "linkStrength" (worker/serialize val)))
-             :friction       (λ [val] (worker/send force-worker "friction" val))
-             :linkDistance   (λ [val] (worker/send force-worker "linkDistance" (worker/serialize val)))
-             :charge         (λ [val] (worker/send force-worker "charge" (worker/serialize val)))
-             :gravity        (λ [val] (worker/send force-worker "gravity" val))
-             :theta          (λ [val] (worker/send force-worker "theta" val))
-             :alpha          (λ [val] (worker/send force-worker "alpha" val))
-             }
+     :force {:size           (fn [array] (worker/send force-worker "size" array))
+             :linkStrength   (fn [val] (worker/send force-worker "linkStrength" (worker/serialize val)))
+             :friction       (fn [val] (worker/send force-worker "friction" val))
+             :linkDistance   (fn [val] (worker/send force-worker "linkDistance" (worker/serialize val)))
+             :charge         (fn [val] (worker/send force-worker "charge" (worker/serialize val)))
+             :gravity        (fn [val] (worker/send force-worker "gravity" val))
+             :theta          (fn [val] (worker/send force-worker "theta" val))
+             :alpha          (fn [val] (worker/send force-worker "alpha" val))}
 
-     :selectNode (λ [node]
+     :selectNode (fn [node]
                     (swap! state assoc :selected node)
                     (:selected @state))
-     :pinNode (λ [node]
+     :pinNode (fn [node]
                  (let [circle (tools/get-circle)
                        mesh (-> node .-mesh)]
                    (set! (-> mesh .-circle) circle)
                    (.add mesh circle))
                  (worker/send force-worker "pin" {:index (-> node .-index)}))
-     :unpinNode (λ [node]
+     :unpinNode (fn [node]
                    (tools/remove-children (-> node .-mesh))
                    (.remove (-> node .-mesh) (-> node .-mesh .-circle))
                    (worker/send force-worker "unpin" {:index (-> node .-index)}))

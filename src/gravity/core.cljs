@@ -4,8 +4,7 @@
             [gravity.events :as events]
             [gravity.force.proxy :as worker]
             [gravity.tools :refer [log]]
-            [gravity.demo :as demo])
-  (:require-macros [gravity.macros :refer [λ]]))
+            [gravity.demo :as demo]))
 
 (enable-console-print!)
 
@@ -22,7 +21,7 @@
                                  :theta 0.8
                                  :alpha 0.1}
                          :webgl {:antialias true
-                                 :background true
+                                 :background false
                                  :lights true
                                  :shadows true}})
 
@@ -33,37 +32,37 @@
 
   (let [{on :on
          canvas :canvas} graph]
-    (on "node-over" (λ [node]
+    (on "node-over" (fn [node]
                        (log :over)
                        (set! (-> canvas .-style .-cursor) "pointer")))
-    (on "node-blur" (λ []
+    (on "node-blur" (fn []
                        (log :blur)
                        (set! (-> canvas .-style .-cursor) "inherit")))
-    (on "node-select" (λ [node]
+    (on "node-select" (fn [node]
                          (log :void)
                          (log [:select (.-name node) node])))
-    (on "void-click" (λ []
+    (on "void-click" (fn []
                         (log [:void])))
-    (on "node-click" (λ [node]
+    (on "node-click" (fn [node]
                         (log :node-click)
                         (let [select (:selectNode graph)]
                           (select node))))
-    (on "node-dbl-click" (λ [node]
+    (on "node-dbl-click" (fn [node]
                             (log :dbl-click)
                             (let [unpin (:unpinNode graph)
                                   resume (:resume graph)]
                               (unpin node)
                               (resume))))
-    (on "drag-start" (λ [node]
+    (on "drag-start" (fn [node]
                         (log :drag-start)))
-    (on "drag-end" (λ [node]
+    (on "drag-end" (fn [node]
                       (log :drag-end)
                       (log node)
                       (let [pin (:pinNode graph)
                             resume (:resume graph)]
                         (pin node)
                         (resume))))
-    (on "ready" (λ []
+    (on "ready" (fn []
                    (let [set-nodes (:nodes graph)
                          set-links (:links graph)
                          update-force (:updateForce graph)

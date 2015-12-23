@@ -1,8 +1,7 @@
 (ns gravity.view.tools
   "Contain tools like selection animation, lights, background, etc…"
 
-  (:require [gravity.tools :refer [log]])
-  (:require-macros [gravity.macros :refer [λ]]))
+  (:require [gravity.tools :refer [log]]))
 
 
 
@@ -37,9 +36,9 @@
 (defn- get-background
   "Generate a gray sphere as a background"
   []
-  (let [material (new js/THREE.MeshLambertMaterial #js {"color" 0xa0a0a0
-                                                        ;"ambiant"  0xffffff
-                                                        "side" 1})
+  (let [material (new js/THREE.MeshLambertMaterial #js {:color 0xa0a0a0
+                                                       ;:ambiant  0xffffff
+                                                       :side 1})
         geometry (new js/THREE.SphereGeometry 20 20 20)
         background (new js/THREE.Mesh geometry material)]
     (.set (.-scale background) 100 100 100)
@@ -65,7 +64,7 @@
                    [1000 -1000 1000]
 
                    [1000 1000 -1000]]
-        lights (map (λ [pos]
+        lights (map (fn [pos]
                        (let [light (new js/THREE.SpotLight color strength)
                              [x y z] pos]
                          (.set (.-position light) x y z)
@@ -121,7 +120,8 @@
   "Return a big plane filling the sphere. Used to drag nodes"
   []
   (let [side 4000
-        material (new js/THREE.MeshBasicMaterial #js {:wireframe true})
+        material (new js/THREE.MeshBasicMaterial #js {:wireframe true
+																											:visible false})
         geometry (new js/THREE.PlaneGeometry side side 1 1)
         mesh (new js/THREE.Mesh geometry material)]
     mesh))
