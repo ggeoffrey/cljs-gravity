@@ -12,7 +12,7 @@
 
 
 
-;; Init parameters for the view
+;; Init view's parameters
 
 
 (defn get-components
@@ -28,7 +28,6 @@
 
     (set! (.-z (.-position camera))  300)
 
-
     {	:scene (new js/THREE.Scene)
       :width width
       :height height
@@ -41,7 +40,7 @@
       :classifier (:color user-map)
       :force-worker (if (:force-worker user-map)
                       (:force-worker user-map)
-                      (worker/create "force-worker/worker.js" (:force user-map)))
+                      (worker/create (:worker-path user-map) (:force user-map)))
 
       :state (atom {:should-run true})
       :first-run (:first-run user-map)}))

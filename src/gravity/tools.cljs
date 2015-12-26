@@ -18,3 +18,8 @@
   "Warn in the console"
   [& args]
   (.warn js/console (get-args args)))
+
+(defn err
+	"Error in the console"
+	[& args]
+	(.error js/console (get-args args)))

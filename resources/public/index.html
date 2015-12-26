@@ -30,8 +30,9 @@
                 var canvas = document.getElementById('target');
 								var tooltip = document.getElementById('tooltip');
 
-                var gg = gravity.core.create({
+                var gg = gravity.graph.create({
                      canvas: canvas,
+										 "worker-path" : "force-worker/worker.js",
                      color : d3.scale.category10(),
                      webgl: {
 //                         background: true,

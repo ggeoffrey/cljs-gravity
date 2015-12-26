@@ -1,5 +1,5 @@
 (ns gravity.force.proxy
-	(:require [gravity.tools :refer [log]]))
+	(:require [gravity.tools :refer [log warn err]]))
 
 
 (defn send
@@ -14,11 +14,20 @@
                                    :data data}))))
 
 
+(defn make-worker!
+	[path]
+	(log (str "A worker will be created to the given path '" path "'. If the canvas stay empty, be sure to check the path."))
+	(new js/Worker path))
+
 (defn create
   "Create a webworker with the given script path"
   [path params]
-  (let [worker (new js/Worker path)]
-    (send worker :init params)
+	(when-not path
+		(warn (str "Invalid worker path ! Unable to create a graph without a correct worker file specified. (null)")))
+  (let [worker (make-worker! path)]
+		(if worker
+			(send worker :init params)
+			(err (str "Invalid worker for path '" path "'. Graph creation will fail.")))
     worker))
 
 (defn listen

@@ -14,7 +14,7 @@ importScripts("../libs/d3-3d.js");
 
 
 goog.require("gravity.force.worker");
-gravity.force.worker.main();
+gravity.force.worker.create();
 //*/
 
 /*

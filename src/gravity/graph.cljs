@@ -1,8 +1,9 @@
-(ns ^:figwheel-always gravity.core
+(ns ^:figwheel-always gravity.graph
   (:require [gravity.view.graph :as graph]
             [gravity.view.graph-tools :as tools]
             [gravity.events :as events]
             [gravity.force.proxy :as worker]
+						[gravity.force.worker :as webworker]
             [gravity.tools :refer [log]]
             [gravity.demo :as demo]))
 
@@ -12,6 +13,8 @@
 
 
 (def default-parameters {:color (.category10 js/d3.scale)
+												 :worker-path "./gravity-worker.js"
+												 :stats false
                          :force {:size [1 1 1]
                                  :linkStrength 1
                                  :friction 0.9
@@ -159,10 +162,11 @@
 	[user-map]
 	(let [user-map (js->clj user-map :keywordize-keys true)
 				params (init-parameters user-map)
-				state (merge user-map params)
+				state (if (:stats user-map)
+								(merge user-map params {:stats (tools/make-stats)})
+								(merge user-map params))
 
 				graph (main state false)]
 		(clj->js graph)))
 
-
-
+(def ^:export create-worker gravity.force.worker/create)
