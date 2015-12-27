@@ -4,9 +4,9 @@
 
 (defn send
   "Send a message to a given worker.
-  @arg worker : worker to target
-  @arg flag : a string (or keyword) that the worker can map to an action
-  @arg data : an object to send (optionnal)"
+  arg worker : worker to target
+  arg flag : a string (or keyword) that the worker can map to an action
+  arg data : an object to send (optionnal)"
   ([worker flag]
    (.postMessage worker (clj->js {:type flag})))
   ([worker flag data]

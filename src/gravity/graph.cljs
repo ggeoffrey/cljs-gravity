@@ -4,8 +4,7 @@
             [gravity.events :as events]
             [gravity.force.proxy :as worker]
 						[gravity.force.worker :as webworker]
-            [gravity.tools :refer [log]]
-            [gravity.demo :as demo]))
+            [gravity.tools :refer [log]]))
 
 (enable-console-print!)
 
@@ -69,9 +68,9 @@
                    (let [set-nodes (:nodes graph)
                          set-links (:links graph)
                          update-force (:updateForce graph)
-                         data (demo/get-demo-graph)
-                         nodes (-> data .-nodes)
-                         links (-> data .-links)]
+
+                         nodes (clj->js [{:name "foo" :group 0} {:name "bar" :group 1}])
+												 links (clj->js [{:source 0 :target 1}])]
                      (set-nodes nodes)
                      (set-links links)
                      (update-force)
