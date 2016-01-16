@@ -1,12 +1,11 @@
-(ns gravity.view.events
+(ns gravity.view.events-generator
   "Events listeners on the canvas, mouse, etc…"
   (:require
    [gravity.tools :refer [log]]
-   [gravity.view.tools :as tools]
+   [gravity.view.graph-tools :as tools]
    [gravity.force.proxy :as force :refer [send]]
    [cljs.core.async :refer [chan >! <! put!  sliding-buffer]])
-  (:require-macros [gravity.macros :refer [λ]]
-                   [cljs.core.async.macros :refer [go go-loop alt!]]))
+  (:require-macros [cljs.core.async.macros :refer [go go-loop alt!]]))
 
 
 
@@ -14,7 +13,7 @@
 (defn onWindowResize
   "Callback for the window-resize event"
   [canvas renderer camera]
-  (λ []
+  (fn []
      (tools/fill-window! canvas)
      (let [width (.-width canvas)
            height (.-height canvas)]
@@ -77,7 +76,8 @@
           (swap! events-state assoc :last :node-over)
           (go
            (>! chan {:type :node-over
-                     :target node}))))
+                     :target node
+										 :original-event event}))))
       ;else
       (when (or
              (= :node-over (:last @events-state))
@@ -85,7 +85,8 @@
              (= :up (:last @events-state)))
         (set! (-> controls .-enabled) true)
         (swap! events-state assoc :last :blur)
-        (go (>! chan {:type :node-blur}))))))
+        (go (>! chan {:type :node-blur
+											:original-event event}))))))
 
 
 (defn- click
@@ -97,7 +98,8 @@
     (when-not (nil? target)
       (let [node (-> target .-object .-node)]
         (go (>! chan {:type :node-click
-                      :target node}))))
+                      :target node
+											:original-event event}))))
     false))
 
 
@@ -110,7 +112,8 @@
     (when-not (nil? target)
       (let [node (.-node (.-object target))]
         (go (>! chan {:type :node-dbl-click
-                      :target node})))))
+                      :target node
+											:original-event event})))))
   false)
 
 
@@ -131,9 +134,12 @@
           (when (= :down (:last @events-state))
             (force/send force-worker "stop")
             (go (>! chan-out {:type :drag-start
-                              :traget node})))
+                              :target node
+															:original-event event})))
           (swap! events-state assoc :last :drag)
           )))))
+
+
 
 
 (defn- down
@@ -154,7 +160,8 @@
       (when-not (nil? target)
         (log "drag-end-with-target")
         (go (>! chan-out {:type :drag-end
-                          :target (-> target .-object .-node)})))))
+                          :target (-> target .-object .-node)
+													:original-event event})))))
   (swap! events-state assoc :last :up)
   (swap! events-state dissoc :target))
 
@@ -232,7 +239,7 @@
 (defn listen-to-canvas
   "Listen to a canvas and return a chan of events."
   [canvas]
-  (let [transduct-mouse (map (λ [e]
+  (let [transduct-mouse (map (fn [e]
                                 ;;(.preventDefault e)
                                 ;;(.stopPropagation e)
                                 {:event e
@@ -242,9 +249,9 @@
         mouseup-chan (chan (sliding-buffer 1) transduct-mouse)
         mousemove-chan (chan (sliding-buffer 1) transduct-mouse)]
 
-    (.addEventListener canvas "mousedown" (λ [e] (put! mousedown-chan e) false))
-    (.addEventListener canvas "mousemove" (λ [e] (put! mousemove-chan e) false))
-    (.addEventListener canvas "mouseup"   (λ [e] (put! mouseup-chan e) false))
+    (.addEventListener canvas "mousedown" (fn [e] (put! mousedown-chan e) false))
+    (.addEventListener canvas "mousemove" (fn [e] (put! mousemove-chan e) false))
+    (.addEventListener canvas "mouseup"   (fn [e] (put! mouseup-chan e) false))
 
     (listen-to-mouse-events mousedown-chan mouseup-chan mousemove-chan)))
 
@@ -281,15 +288,17 @@
         new-node (:selected new-state)]
     (when-not (nil? old-node)
       (set! (-> old-node .-selected) false)
-      (.remove (-> old-node .-mesh) circle))
+      (.remove (-> old-node .-mesh) circle)
+			(set! (-> circle .-visible) true))
     (when-not (nil? new-node)
       (set! (-> new-node .-selected) true)
-      (.add (-> new-node .-mesh) circle))))
+      (.add (-> new-node .-mesh) circle)
+			(set! (-> circle .-visible) true))))
 
 
 (defn watch-state
   [state watch-id]
   (add-watch state watch-id
-             (λ [id state old-state new-state]
+             (fn [id state old-state new-state]
                 (put-select-circle-on-node old-state new-state)
                 )))

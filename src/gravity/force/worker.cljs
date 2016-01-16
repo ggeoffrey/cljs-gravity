@@ -279,7 +279,7 @@
 
 
 
-(defn ^:export main
+(defn ^:export create
   "Main entry point"
   []
   (.addEventListener js/self "message" dispatcher))

@@ -7,31 +7,42 @@
     </head>
     <body>
         <div id="counter"></div>
-        <canvas id="target"></canvas>
+
+        <div id="container">
+        	<canvas id="target"></canvas>
+					<div id="tooltip"></div>
+        </div>
 
 
-        <script src="libs/three.min.js"></script>
+        <script src="libs/three.js"></script>
         <script src="libs/OrbitControls.js"></script>
         <script src="libs/d3-3d.js"></script>
         <script src="libs/stats.min.js"></script>
+
+	<!-- 				dev  -->
+
+			  <script type='text/javascript' id='lt_ws' src='http://localhost:5678/socket.io/lighttable/ws.js'></script>
 
         <script src="js/compiled/gravity.js" type="text/javascript"></script>
         <script>
 
             function start () {
                 var canvas = document.getElementById('target');
-                var gg = gravity.core.init_dev_mode({
-                    canvas: canvas,
-//                     color : d3.scale.category10(),
-//                     webgl: {
+								var tooltip = document.getElementById('tooltip');
+
+                var gg = gravity.graph.create({
+                     canvas: canvas,
+										 "worker-path" : "force-worker/worker.js",
+                     color : d3.scale.category10(),
+                     webgl: {
 //                         background: true,
-//                         lights: true,
-//                         shadows : true,
-//                         antialias : true
-//                     },
-//                     force : {
-//                         //charge : -100,
-//                     }
+                         lights: true,
+                         shadows : true,
+                         antialias : true
+                     },
+                     force : {
+                         charge : -100,
+                     }
                 });
 
 //                 gg.on("ready", function(){
@@ -41,18 +52,29 @@
 //                     //gg.updateForce();
 //                 });
 
-                document.body.appendChild(gg.stats.domElement);
+								if(gg.stats){
+									document.body.appendChild(gg.stats.domElement);
+								}
+
                 window.gg = gg;
 
-                /*
-                gg.on("nodeover", function(node){
-                    canvas.style.cursor = "pointer";
+
+                gg.on("node-over", function(node, event){
+									 canvas.style.cursor = "pointer";
+                   tooltip.style.top = event.clientY + "px";
+									 tooltip.style.left = event.clientX + "px";
+									 tooltip.style.display = "block";
+
+									 tooltip.innerText = node.name;
                 });
 
-                 gg.on("nodeblur", function(){
+
+								gg.on("node-blur", function(){
                     canvas.style.cursor = "inherit";
+									  tooltip.style.display = "none";
                 });
 
+								/*
                 gg.on("nodeselect", function(node){
                     alert(node.name);
                 });

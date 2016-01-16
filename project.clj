@@ -19,9 +19,9 @@
     :builds [{:id "dev"
               :source-paths ["src"]
 
-              :figwheel { :on-jsload "gravity.core/on-js-reload" }
+              :figwheel { :on-jsload "gravity.graph/on-js-reload" }
 
-              :compiler {:main gravity.core
+              :compiler {:main gravity.graph
                          :asset-path "js/compiled/out"
                          :output-to "resources/public/js/compiled/gravity.js"
                          :output-dir "resources/public/js/compiled/out"
@@ -29,9 +29,14 @@
              {:id "min"
               :source-paths ["src"]
               :compiler {:output-to "resources/public/js/compiled/gravity.js"
-                         :main gravity.core
+                         :main gravity.graph
                          :optimizations :advanced
-                         :pretty-print false}}]}
+                         :pretty-print false
+												 :externs ["resources/public/libs/three.js"
+																	 "resources/public/libs/OrbitControls.js"
+																	 "resources/public/libs/d3-3d.js"
+																	 "resources/public/libs/stats.min.js"]
+												 :closure-warnings {:externs-validation :off}}}]}
 
   :figwheel {
              ;; :http-server-root "public" ;; default and assumes "resources"

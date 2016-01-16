@@ -1,16 +1,17 @@
-(ns gravity.view.tools
+(ns gravity.view.graph-tools
   "Contain tools like selection animation, lights, background, etc…"
 
-  (:require [gravity.tools :refer [log]])
-  (:require-macros [gravity.macros :refer [λ]]))
+  (:require [gravity.tools :refer [log]]))
 
 
 
 (defn fill-window!
   "Resize a canvas to make it fill the window"
   [canvas]
-  (let [width (.-innerWidth js/window)
-        height (.-innerHeight js/window)]
+  (set! (-> canvas .-style .-width) "100%")
+  (set! (-> canvas .-style .-height) "100%")
+  (let [width (.-offsetWidth canvas)
+        height (.-offsetHeight canvas)]
     (set! (.-width canvas) width)
     (set! (.-height canvas) height))
   nil)
@@ -29,15 +30,21 @@
     (set! (.-top style) "0px")
     stats))
 
+(defn make-fake-stats
+	"Create a fake object that will be returned in place of stats
+	Used in prod mode"
+	[]
+	#js {:domElement nil})
+
 
 
 
 (defn- get-background
   "Generate a gray sphere as a background"
   []
-  (let [material (new js/THREE.MeshLambertMaterial #js {"color" 0xa0a0a0
-                                                        ;"ambiant"  0xffffff
-                                                        "side" 1})
+  (let [material (new js/THREE.MeshLambertMaterial #js {:color 0xa0a0a0
+                                                       ;:ambiant  0xffffff
+                                                       :side 1})
         geometry (new js/THREE.SphereGeometry 20 20 20)
         background (new js/THREE.Mesh geometry material)]
     (.set (.-scale background) 100 100 100)
@@ -63,7 +70,7 @@
                    [1000 -1000 1000]
 
                    [1000 1000 -1000]]
-        lights (map (λ [pos]
+        lights (map (fn [pos]
                        (let [light (new js/THREE.SpotLight color strength)
                              [x y z] pos]
                          (.set (.-position light) x y z)
@@ -73,7 +80,7 @@
                     positions)]
     (let [main-light (first lights)]
       (set! (.-castShadow main-light) true)
-      (set! (.-shadowCameraVisible main-light) true))
+      (set! (.-shadowCameraVisible main-light) false))
 
     lights))
 
@@ -119,7 +126,8 @@
   "Return a big plane filling the sphere. Used to drag nodes"
   []
   (let [side 4000
-        material (new js/THREE.MeshBasicMaterial #js {:wireframe true})
+        material (new js/THREE.MeshBasicMaterial #js {:wireframe true
+																											:visible false})
         geometry (new js/THREE.PlaneGeometry side side 1 1)
         mesh (new js/THREE.Mesh geometry material)]
     mesh))

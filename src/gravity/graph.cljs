@@ -1,11 +1,10 @@
-(ns ^:figwheel-always gravity.core
+(ns ^:figwheel-always gravity.graph
   (:require [gravity.view.graph :as graph]
-            [gravity.view.tools :as tools]
+            [gravity.view.graph-tools :as tools]
             [gravity.events :as events]
             [gravity.force.proxy :as worker]
-            [gravity.tools :refer [log]]
-            [gravity.demo :as demo])
-  (:require-macros [gravity.macros :refer [λ]]))
+						[gravity.force.worker :as webworker]
+            [gravity.tools :refer [log]]))
 
 (enable-console-print!)
 
@@ -13,6 +12,8 @@
 
 
 (def default-parameters {:color (.category10 js/d3.scale)
+												 :worker-path "./gravity-worker.js"
+												 :stats false
                          :force {:size [1 1 1]
                                  :linkStrength 1
                                  :friction 0.9
@@ -22,7 +23,7 @@
                                  :theta 0.8
                                  :alpha 0.1}
                          :webgl {:antialias true
-                                 :background true
+                                 :background false
                                  :lights true
                                  :shadows true}})
 
@@ -33,43 +34,43 @@
 
   (let [{on :on
          canvas :canvas} graph]
-    (on "node-over" (λ [node]
+    (on "node-over" (fn [node]
                        (log :over)
                        (set! (-> canvas .-style .-cursor) "pointer")))
-    (on "node-blur" (λ []
+    (on "node-blur" (fn []
                        (log :blur)
                        (set! (-> canvas .-style .-cursor) "inherit")))
-    (on "node-select" (λ [node]
+    (on "node-select" (fn [node]
                          (log :void)
                          (log [:select (.-name node) node])))
-    (on "void-click" (λ []
+    (on "void-click" (fn []
                         (log [:void])))
-    (on "node-click" (λ [node]
+    (on "node-click" (fn [node]
                         (log :node-click)
                         (let [select (:selectNode graph)]
                           (select node))))
-    (on "node-dbl-click" (λ [node]
+    (on "node-dbl-click" (fn [node]
                             (log :dbl-click)
                             (let [unpin (:unpinNode graph)
                                   resume (:resume graph)]
                               (unpin node)
                               (resume))))
-    (on "drag-start" (λ [node]
+    (on "drag-start" (fn [node]
                         (log :drag-start)))
-    (on "drag-end" (λ [node]
+    (on "drag-end" (fn [node]
                       (log :drag-end)
                       (log node)
                       (let [pin (:pinNode graph)
                             resume (:resume graph)]
                         (pin node)
                         (resume))))
-    (on "ready" (λ []
+    (on "ready" (fn []
                    (let [set-nodes (:nodes graph)
                          set-links (:links graph)
                          update-force (:updateForce graph)
-                         data (demo/get-demo-graph)
-                         nodes (-> data .-nodes)
-                         links (-> data .-links)]
+
+                         nodes (clj->js [{:name "foo" :group 0} {:name "bar" :group 1}])
+												 links (clj->js [{:source 0 :target 1}])]
                      (set-nodes nodes)
                      (set-links links)
                      (update-force)
@@ -99,7 +100,7 @@
      :webgl webgl-merged}))
 
 
-(defn ^:export main
+(defn- main
 
   ([user-map]
    (let [graph (main user-map false)]
@@ -156,5 +157,15 @@
 
 
 
+(defn ^:export create
+	[user-map]
+	(let [user-map (js->clj user-map :keywordize-keys true)
+				params (init-parameters user-map)
+				state (if (:stats user-map)
+								(merge user-map params {:stats (tools/make-stats)})
+								(merge user-map params))
 
+				graph (main state false)]
+		(clj->js graph)))
 
+(def ^:export create-worker gravity.force.worker/create)

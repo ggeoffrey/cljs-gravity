@@ -1,8 +1,7 @@
 (ns gravity.view.nodeset
   (:refer-clojure :exclude [update])
   (:require [gravity.tools :refer [log]]
-            [gravity.view.node :as node])
-  (:require-macros [gravity.macros :refer [λ]]))
+            [gravity.view.node :as node]))
 
 
 (declare get-unique-color)
@@ -34,7 +33,7 @@
   The nodes and the colliders are in the same order and share the same position Vector3."
   [nodes classifier]
   (let [counter (atom 0)
-        pairs (map (λ [node]
+        pairs (map (fn [node]
                       (let [index @counter
                             prepared-node (node/create node classifier index)
                             mesh (.-mesh prepared-node)]

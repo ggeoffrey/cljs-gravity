@@ -1,6 +1,6 @@
 (ns gravity.tools)
 
-(defn- get-args 
+(defn- get-args
   "Return the first arg or all the list as a js-obj"
   [coll]
   (if (= (count coll) 1)
@@ -8,12 +8,18 @@
    	(clj->js coll)))
 
 
-(defn log 
+(defn log
   "Log in the console"
   [& args]
-  (.log js/console (get-args args)))
+  (.log js/console (get-args args))
+	)
 
-(defn warn 
+(defn warn
   "Warn in the console"
   [& args]
   (.warn js/console (get-args args)))
+
+(defn err
+	"Error in the console"
+	[& args]
+	(.error js/console (get-args args)))

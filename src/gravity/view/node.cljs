@@ -12,10 +12,14 @@
   (memoize get-color))
 
 
+
 (defn get-rand-pos
   "Give a random position between -extent and +extent"
   [extent]
-  (- (rand (* extent 2)) extent))
+	(-> (* 2 extent)
+			(rand)
+			(- extent)))
+
 
 
 (defn generate-geometry
