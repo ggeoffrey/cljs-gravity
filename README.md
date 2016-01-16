@@ -1,39 +1,17 @@
-# gravity
+## A 3D force layout using D3.js and THREE.js
 
-FIXME: Write a one-line description of your library/project.
+Cljs-gravity (please help me to find a better name!) is a ClojureScript library that plot an interactive graph, animated by a Barnes-Hut simulation. 
 
-## Overview
+**This is a work in progress**
 
-FIXME: Write a paragraph about the library/project and highlight its goals.
+The goal is to make a safe and stable 3D graph visualisation that:
+ - do one thing and do it well,
+ - rely on quasi-standard tools,
+ - ensure there is no side effects,
+ - ensure there is no memory leaks,
+ - use webworkers in an easy, safe and elegant way,
+ - provide a rich set of events.
 
-## Setup
-
-To get an interactive development environment run:
-
-    lein figwheel
-
-and open your browser at [localhost:3449](http://localhost:3449/).
-This will auto compile and send all changes to the browser without the
-need to reload. After the compilation process is complete, you will
-get a Browser Connected REPL. An easy way to try it is:
-
-    (js/alert "Am I connected?")
-
-and you should see an alert in the browser window.
-
-To clean all compiled files:
-
-    lein clean
-
-To create a production build run:
-
-    lein cljsbuild once min
-
-And open your browser in `resources/public/index.html`. You will not
-get live reloading, nor a REPL. 
-
-## License
-
-Copyright © 2014 FIXME
-
-Distributed under the Eclipse Public License either version 1.0 or (at your option) any later version.
+### Report
+See [this document](https://github.com/ggeoffrey/cljs-gravity/raw/master/DRAFT-cljs-gravity.pdf)
+for full knowledge on the library's content and rationals.
